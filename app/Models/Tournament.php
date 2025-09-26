@@ -1,0 +1,55 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+
+class Tournament extends Model
+{
+    use HasFactory;
+
+    public $incrementing = false;
+    protected $keyType = 'string';
+    protected $fillable = [
+        'tournament_name', 'vendor_name', 'current_stage', 'current_bto_session',
+        'track_number', 'bto_number', 'bto_session_number', 'max_racer_per_team',
+        'champion_number', 'best_race_enabled', 'best_race_number', 'status',
+        'created_by', 'updated_by'
+    ];
+
+    public function tokens()
+    {
+        return $this->hasMany(TournamentToken::class);
+    }
+
+    public function moderators()
+    {
+        return $this->belongsToMany(User::class, 'tournament_moderators');
+    }
+
+    public function participants()
+    {
+        return $this->hasMany(TournamentParticipant::class);
+    }
+
+    public function races()
+    {
+        return $this->hasMany(Race::class);
+    }
+
+    public function couponHistory()
+    {
+        return $this->hasMany(CouponHistory::class);
+    }
+
+    public function bestTimes()
+    {
+        return $this->hasMany(BestTime::class);
+    }
+
+    public function results()
+    {
+        return $this->hasMany(TournamentResult::class);
+    }
+}
