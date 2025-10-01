@@ -12,6 +12,7 @@ class Racer extends Model
     public $incrementing = false;
     protected $keyType = 'string';
     protected $fillable = ['racer_name', 'image', 'team_id', 'created_by', 'updated_by'];
+    protected $appends = ['image_url'];
 
     public function team()
     {
@@ -31,6 +32,14 @@ class Racer extends Model
     public function tournamentResults()
     {
         return $this->hasMany(TournamentResult::class);
+    }
+
+    /**
+     * Get the full URL for the racer's image.
+     */
+    public function getImageUrlAttribute()
+    {
+        return $this->image ? asset('storage/' . $this->image) : null;
     }
 
     protected static function boot()
