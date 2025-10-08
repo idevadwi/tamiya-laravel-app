@@ -10,12 +10,17 @@ use App\Http\Controllers\Controller;
 
 class RacerController extends Controller
 {
+    private const TEAM_VALIDATION_RULE = 'nullable|uuid|exists:teams,id';
+    private const VALIDATION_ERROR_MESSAGE = 'Validation error';
+    private const RACER_NOT_FOUND_MESSAGE = 'Racer not found';
     /**
      * Display a listing of racers.
      */
     public function index()
     {
         $racers = Racer::with('team')->get();
+
+        // Image URLs are automatically added via the model accessor
 
         return response()->json([
             'success' => true,
@@ -31,10 +36,13 @@ class RacerController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'racer_name' => 'required|string|max:255',
-            'image'      => 'nullable|string',
-            'team_id'    => 'nullable|uuid|exists:teams,id',
+            'image'      => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'team_id'    => self::TEAM_VALIDATION_RULE,
         ], [
             'racer_name.required' => 'racer_name is required.',
+            'image.image'         => 'The file must be an image.',
+            'image.mimes'         => 'The image must be a file of type: jpeg, png, jpg, gif, svg.',
+            'image.max'           => 'The image may not be greater than 2MB.',
             'team_id.uuid'        => 'team_id must be a valid UUID.',
             'team_id.exists'      => 'team_id not found.',
         ]);
@@ -42,18 +50,28 @@ class RacerController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validation error',
+                'message' => self::VALIDATION_ERROR_MESSAGE,
                 'errors'  => $validator->errors(),
             ], 400);
+        }
+
+        $imagePath = null;
+        if ($request->hasFile('image')) {
+            $image = $request->file('image');
+            $imageName = time() . '_' . Str::random(10) . '.' . $image->getClientOriginalExtension();
+            $imagePath = $image->storeAs('racers', $imageName, 'public');
         }
 
         $racer = Racer::create([
             'id'         => \Illuminate\Support\Str::uuid(),
             'racer_name' => $request->racer_name,
-            'image'      => $request->image,
+            'image'      => $imagePath,
             'team_id'    => $request->team_id,
             'created_by' => auth()->id(),
         ]);
+
+        // Load the racer with team relationship
+        $racer->load('team');
 
         return response()->json([
             'success' => true,
@@ -72,7 +90,7 @@ class RacerController extends Controller
         if (!$racer) {
             return response()->json([
                 'success' => false,
-                'message' => 'Racer not found'
+                'message' => self::RACER_NOT_FOUND_MESSAGE
             ], 404);
         }
 
@@ -92,30 +110,51 @@ class RacerController extends Controller
         if (!$racer) {
             return response()->json([
                 'success' => false,
-                'message' => 'Racer not found',
+                'message' => self::RACER_NOT_FOUND_MESSAGE,
             ], 404);
         }
 
         $validator = Validator::make($request->all(), [
             'racer_name' => 'sometimes|required|string|max:255',
-            'image'      => 'nullable|string',
-            'team_id'    => 'nullable|uuid|exists:teams,id',
+            'image'      => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'team_id'    => self::TEAM_VALIDATION_RULE,
+        ], [
+            'image.image' => 'The file must be an image.',
+            'image.mimes' => 'The image must be a file of type: jpeg, png, jpg, gif, svg.',
+            'image.max'   => 'The image may not be greater than 2MB.',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validation error',
+                'message' => self::VALIDATION_ERROR_MESSAGE,
                 'errors'  => $validator->errors(),
             ], 400);
         }
 
-        $racer->update([
+        $updateData = [
             'racer_name' => $request->racer_name ?? $racer->racer_name,
-            'image'      => $request->image ?? $racer->image,
             'team_id'    => $request->team_id ?? $racer->team_id,
             'updated_by' => auth()->id(),
-        ]);
+        ];
+
+        // Handle image upload
+        if ($request->hasFile('image')) {
+            // Delete old image if exists
+            if ($racer->image && \Storage::disk('public')->exists($racer->image)) {
+                \Storage::disk('public')->delete($racer->image);
+            }
+
+            $image = $request->file('image');
+            $imageName = time() . '_' . Str::random(10) . '.' . $image->getClientOriginalExtension();
+            $imagePath = $image->storeAs('racers', $imageName, 'public');
+            $updateData['image'] = $imagePath;
+        }
+
+        $racer->update($updateData);
+
+        // Load the racer with team relationship
+        $racer->load('team');
 
         return response()->json([
             'success' => true,
@@ -135,7 +174,7 @@ class RacerController extends Controller
         if (!$racer) {
             return response()->json([
                 'success' => false,
-                'message' => 'Racer not found'
+                'message' => self::RACER_NOT_FOUND_MESSAGE
             ], 404);
         }
 
@@ -156,12 +195,12 @@ class RacerController extends Controller
         if (!$racer) {
             return response()->json([
                 'success' => false,
-                'message' => 'Racer not found'
+                'message' => self::RACER_NOT_FOUND_MESSAGE
             ], 404);
         }
 
         $validator = Validator::make($request->all(), [
-            'team_id' => 'nullable|uuid|exists:teams,id',
+            'team_id' => self::TEAM_VALIDATION_RULE,
         ], [
             'team_id.uuid'   => 'team_id must be a valid UUID.',
             'team_id.exists' => 'team_id not found.',
@@ -170,7 +209,7 @@ class RacerController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validation error',
+                'message' => self::VALIDATION_ERROR_MESSAGE,
                 'errors'  => $validator->errors(),
             ], 422);
         }
