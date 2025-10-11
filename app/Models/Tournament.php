@@ -52,4 +52,15 @@ class Tournament extends Model
     {
         return $this->hasMany(TournamentResult::class);
     }
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($model) {
+            if (empty($model->id)) {
+                $model->id = (string) \Illuminate\Support\Str::uuid();
+            }
+        });
+    }
 }
