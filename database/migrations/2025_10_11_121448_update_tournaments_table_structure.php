@@ -12,17 +12,17 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('tournaments', function (Blueprint $table) {
-            // Remove nullable from current_stage
-            $table->integer('current_stage')->nullable(false)->change();
-            
-            // Remove nullable from current_bto_session
-            $table->integer('current_bto_session')->nullable(false)->change();
-            
-            // Change best_race_number from nullable to default(1)
-            $table->integer('best_race_number')->default(1)->nullable(false)->change();
-            
-            // Update status enum to remove 'PLANNED' and change default to 'ACTIVE'
-            $table->enum('status', ['ACTIVE','COMPLETED','CANCELLED'])->default('ACTIVE')->change();
+            // Change nullable from current_stage
+            $table->integer('current_stage')->nullable(true)->change();
+
+            // Change nullable from current_bto_session
+            $table->integer('current_bto_session')->nullable(true)->change();
+
+            // Change best_race_number to nullable
+            $table->integer('best_race_number')->nullable(true)->change();
+
+            // Update status enum to remove 'PLANNED' and change default to 'PLANNED'
+            $table->enum('status', ['PLANNED','ACTIVE','COMPLETED','CANCELLED'])->default('PLANNED')->change();
         });
     }
 
@@ -32,17 +32,17 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('tournaments', function (Blueprint $table) {
-            // Revert current_stage to nullable
-            $table->integer('current_stage')->nullable()->change();
-            
-            // Revert current_bto_session to nullable
-            $table->integer('current_bto_session')->nullable()->change();
-            
-            // Revert best_race_number to nullable without default
-            $table->integer('best_race_number')->nullable()->change();
-            
-            // Revert status enum to include 'PLANNED' and change default to 'PLANNED'
-            $table->enum('status', ['PLANNED','ACTIVE','COMPLETED','CANCELLED'])->default('PLANNED')->change();
+            // Revert current_stage to not nullable
+            $table->integer('current_stage')->nullable(false)->change();
+
+            // Revert current_bto_session to not nullable
+            $table->integer('current_bto_session')->nullable(false)->change();
+
+            // Revert best_race_number to not nullable without default
+            $table->integer('best_race_number')->nullable(false)->change();
+
+            // Revert status enum and change default to 'ACTIVE'
+            $table->enum('status', ['ACTIVE','COMPLETED','CANCELLED'])->default('ACTIVE')->change();
         });
     }
 };
