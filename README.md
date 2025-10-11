@@ -63,3 +63,35 @@ The Laravel framework is open-sourced software licensed under the [MIT license](
 
 ## Framework
 - laravel/sanctum
+
+## Frontend Stack
+- **Vue 3** - Progressive JavaScript framework for building user interfaces
+- **Vite** - Fast build tool and dev server
+- **Tailwind CSS** - Utility-first CSS framework
+
+## Development Setup
+
+### Prerequisites
+- PHP 8.1+
+- Node.js 18+ (recommended: use Node.js 20+ for best compatibility)
+- Composer
+
+### Installation
+1. Clone the repository
+2. Install PHP dependencies: `composer install`
+3. Install JavaScript dependencies: `npm install`
+4. Copy environment file: `cp .env.example .env`
+5. Generate application key: `php artisan key:generate`
+6. Run migrations: `php artisan migrate`
+
+### Development Servers
+- **Start both servers**: `npm run dev:all` (runs Laravel on port 8080 and Vite dev server)
+- **Laravel only**: `php artisan serve --port=8080`
+- **Vite only**: `npm run dev`
+
+### Vue Components
+Vue components are located in `resources/js/components/`. The application includes:
+- `ExampleComponent.vue` - Basic Vue component example
+- `RaceTimer.vue` - Tamiya race timing component with start/stop/reset functionality
+
+Components are automatically registered in `resources/js/app.js` and can be used in Blade templates.
