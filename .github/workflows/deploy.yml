@@ -3,45 +3,49 @@ name: Deploy Laravel to VPS
 on:
   push:
     branches:
-      - deva   # Only deploy when this branch is pushed
+      - deva   # Deploy only when pushing to branch 'deva'
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
+      # Checkout source code (not used for deploy, but required action)
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Deploy via SSH
+      # Connect to VPS via SSH and deploy
+      - name: Deploy to VPS
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
+          username: ${{ secrets.SSH_USER }} 
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT }}
+          command_timeout: 20m
           script: |
-            cd ${{ secrets.PROJECT_PATH }}
+            echo "🔄 Switching to project directory..."
+            cd /var/www/tamiya-laravel-app
 
-            # Get latest code of the deploy branch
+            echo "📥 Fetching latest code..."
             git fetch origin
             git reset --hard origin/${{ secrets.BRANCH_NAME }}
 
-            # Install/update dependencies
+            echo "📦 Installing Composer dependencies..."
             composer install --no-interaction --prefer-dist --optimize-autoloader
 
-            # Run migrations
+            echo "🛠 Running migrations..."
             php artisan migrate --force
 
-            # Optimize app
+            echo "🚀 Optimizing Laravel..."
             php artisan optimize:clear
             php artisan optimize
 
-            # Set permissions
-            chown -R www-data:www-data storage bootstrap/cache
+            echo "🔐 Fixing storage & cache permissions..."
+            chmod -R 775 storage bootstrap/cache
+            chown -R deva:www-data storage bootstrap/cache
 
-            # Restart queue workers if using Supervisor (ignore error if not configured)
-            supervisorctl restart laravel-worker:* || true
+            echo "🔁 Reloading Nginx..."
+            sudo systemctl reload nginx
 
-            # Reload nginx just in case
-            systemctl reload nginx || true
+            echo "✅ Deployment completed successfully!"
