@@ -42,7 +42,6 @@ jobs:
 
             echo "🔐 Fixing permissions..."
             sudo chown -R deva:www-data storage bootstrap/cache
-            sudo chmod -R 775 storage bootstrap/cache
 
             echo "🔁 Reloading Nginx..."
             sudo systemctl reload nginx
