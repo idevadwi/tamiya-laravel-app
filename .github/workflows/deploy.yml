@@ -1,0 +1,47 @@
+name: Deploy Laravel to VPS
+
+on:
+  push:
+    branches:
+      - ${{ secrets.BRANCH_NAME }}   # Only deploy when this branch is pushed
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            cd ${{ secrets.PROJECT_PATH }}
+
+            # Get latest code of the deploy branch
+            git fetch origin
+            git reset --hard origin/${{ secrets.BRANCH_NAME }}
+
+            # Install/update dependencies
+            composer install --no-interaction --prefer-dist --optimize-autoloader
+
+            # Run migrations
+            php artisan migrate --force
+
+            # Optimize app
+            php artisan optimize:clear
+            php artisan optimize
+
+            # Set permissions
+            chown -R www-data:www-data storage bootstrap/cache
+
+            # Restart queue workers if using Supervisor (ignore error if not configured)
+            supervisorctl restart laravel-worker:* || true
+
+            # Reload nginx just in case
+            systemctl reload nginx || true
