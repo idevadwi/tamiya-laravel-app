@@ -25,7 +25,9 @@ class Tournament extends Model
 
     public function moderators()
     {
-        return $this->belongsToMany(User::class, 'tournament_moderators');
+        return $this->belongsToMany(User::class, 'tournament_moderators', 'tournament_id', 'user_id')
+            ->withPivot('id', 'created_by', 'updated_by')
+            ->withTimestamps();
     }
 
     public function participants()

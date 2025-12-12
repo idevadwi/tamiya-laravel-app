@@ -95,3 +95,6 @@ Vue components are located in `resources/js/components/`. The application includ
 - `RaceTimer.vue` - Tamiya race timing component with start/stop/reset functionality
 
 Components are automatically registered in `resources/js/app.js` and can be used in Blade templates.
+
+
+php artisan serve --host=0.0.0.0 --port=8000

@@ -1,11 +1,150 @@
-@import 'tailwindcss';
+/* AdminLTE will handle its own CSS */
+/* Add your custom CSS here if needed */
 
-@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
-@source '../../storage/framework/views/*.php';
-@source '../**/*.blade.php';
-@source '../**/*.js';
+/* Fix pagination icon sizes - Bootstrap pagination */
+.pagination .page-link i,
+.pagination .page-link .fa,
+.pagination .page-link .fas,
+.pagination .page-link .far,
+.pagination .page-link .fab,
+.pagination .page-link .fal,
+.pagination .page-link .fad,
+.pagination .page-link svg {
+    font-size: 0.875rem !important;
+    width: 0.875rem !important;
+    height: 0.875rem !important;
+}
 
-@theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+/* Fix pagination icon sizes - Tailwind/Laravel default pagination */
+/* Target all SVG and icon elements within pagination navigation */
+nav[role="navigation"][aria-label="Pagination Navigation"] svg,
+nav[role="navigation"][aria-label="Pagination Navigation"] * svg,
+nav[aria-label="Pagination Navigation"] svg,
+nav[aria-label="Pagination Navigation"] * svg {
+    width: 1rem !important;
+    height: 1rem !important;
+    max-width: 1rem !important;
+    max-height: 1rem !important;
+}
+
+nav[role="navigation"][aria-label="Pagination Navigation"] i,
+nav[role="navigation"][aria-label="Pagination Navigation"] .fa,
+nav[role="navigation"][aria-label="Pagination Navigation"] .fas,
+nav[role="navigation"][aria-label="Pagination Navigation"] .far,
+nav[role="navigation"][aria-label="Pagination Navigation"] .fab,
+nav[role="navigation"][aria-label="Pagination Navigation"] .fal,
+nav[role="navigation"][aria-label="Pagination Navigation"] .fad,
+nav[role="navigation"][aria-label="Pagination Navigation"] a i,
+nav[role="navigation"][aria-label="Pagination Navigation"] a .fa,
+nav[role="navigation"][aria-label="Pagination Navigation"] a .fas,
+nav[role="navigation"][aria-label="Pagination Navigation"] a .far,
+nav[role="navigation"][aria-label="Pagination Navigation"] a svg,
+nav[role="navigation"][aria-label="Pagination Navigation"] button i,
+nav[role="navigation"][aria-label="Pagination Navigation"] button .fa,
+nav[role="navigation"][aria-label="Pagination Navigation"] button .fas,
+nav[role="navigation"][aria-label="Pagination Navigation"] button .far,
+nav[role="navigation"][aria-label="Pagination Navigation"] button svg,
+nav[role="navigation"][aria-label="Pagination Navigation"] span svg,
+nav[role="navigation"][aria-label="Pagination Navigation"] div svg {
+    font-size: 0.875rem !important;
+    width: 1rem !important;
+    height: 1rem !important;
+    max-width: 1rem !important;
+    max-height: 1rem !important;
+}
+
+/* Also target flex container children */
+.flex.items-center.justify-between svg,
+.flex.items-center svg {
+    width: 1rem !important;
+    height: 1rem !important;
+    max-width: 1rem !important;
+    max-height: 1rem !important;
+}
+
+/* Very aggressive targeting for all SVG in pagination areas */
+nav[aria-label="Pagination Navigation"] svg,
+nav[role="navigation"][aria-label="Pagination Navigation"] svg,
+.card-footer svg,
+.card-footer nav svg {
+    width: 1rem !important;
+    height: 1rem !important;
+    max-width: 1rem !important;
+    max-height: 1rem !important;
+    min-width: 1rem !important;
+    min-height: 1rem !important;
+}
+
+/* Target SVG with specific classes that might be used */
+svg.w-5,
+svg.h-5,
+svg.w-4,
+svg.h-4 {
+    width: 1rem !important;
+    height: 1rem !important;
+}
+
+/* Override any inline styles or viewBox issues */
+nav[aria-label="Pagination Navigation"] svg[viewBox],
+nav[role="navigation"][aria-label="Pagination Navigation"] svg[viewBox] {
+    width: 1rem !important;
+    height: 1rem !important;
+    max-width: 1rem !important;
+    max-height: 1rem !important;
+}
+
+/* Constrain parent containers that might be causing the issue */
+nav[aria-label="Pagination Navigation"] > *,
+nav[role="navigation"][aria-label="Pagination Navigation"] > * {
+    max-width: 100% !important;
+}
+
+/* Fix for Tailwind/Laravel default pagination - exclude Bootstrap pagination */
+nav[aria-label="Pagination Navigation"]:not(.pagination) a,
+nav[role="navigation"][aria-label="Pagination Navigation"]:not(.pagination) a,
+nav[aria-label="Pagination Navigation"]:not(.pagination) button,
+nav[role="navigation"][aria-label="Pagination Navigation"]:not(.pagination) button {
+    display: inline-flex !important;
+    align-items: center !important;
+    max-width: fit-content !important;
+}
+
+nav[aria-label="Pagination Navigation"]:not(.pagination) a svg,
+nav[role="navigation"][aria-label="Pagination Navigation"]:not(.pagination) a svg,
+nav[aria-label="Pagination Navigation"]:not(.pagination) button svg,
+nav[role="navigation"][aria-label="Pagination Navigation"]:not(.pagination) button svg {
+    flex-shrink: 0 !important;
+    width: 1rem !important;
+    height: 1rem !important;
+    max-width: 1rem !important;
+    max-height: 1rem !important;
+}
+
+/* Fix for Bootstrap pagination in card-footer - prevent overlap */
+.card-footer .pagination {
+    margin-bottom: 0 !important;
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+}
+
+.card-footer .pagination .page-item {
+    margin: 0.125rem !important;
+}
+
+.card-footer .pagination .page-link {
+    display: block !important; /* Keep Bootstrap's block display */
+    margin-left: 0 !important; /* Remove negative margin that causes overlap */
+    border-radius: 0.25rem !important;
+}
+
+/* Ensure proper spacing for Tailwind pagination in card-footer */
+.card-footer nav[aria-label="Pagination Navigation"]:not(.pagination) {
+    display: flex !important;
+    justify-content: center !important;
+    flex-wrap: wrap !important;
+    gap: 0.5rem !important;
+}
+
+.card-footer nav[aria-label="Pagination Navigation"]:not(.pagination) > * {
+    margin: 0 !important;
 }
