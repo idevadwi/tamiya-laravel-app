@@ -3,7 +3,7 @@ name: Deploy Laravel to VPS
 on:
   push:
     branches:
-      - ${{ secrets.BRANCH_NAME }}   # Only deploy when this branch is pushed
+      - deva   # Only deploy when this branch is pushed
 
 jobs:
   deploy:
