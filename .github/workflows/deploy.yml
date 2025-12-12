@@ -3,33 +3,32 @@ name: Deploy Laravel to VPS
 on:
   push:
     branches:
-      - deva   # Deploy only when pushing to branch 'deva'
+      - deva     # <-- your deployment branch
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout source code (not used for deploy, but required action)
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Connect to VPS via SSH and deploy
       - name: Deploy to VPS
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }} 
+          username: ${{ secrets.SSH_USER }}       # must be 'deva'
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT }}
           command_timeout: 20m
+          
           script: |
-            echo "🔄 Switching to project directory..."
+            echo "🔄 Changing directory..."
             cd /var/www/tamiya-laravel-app
 
-            echo "📥 Fetching latest code..."
+            echo "📥 Fetching latest branch..."
             git fetch origin
-            git reset --hard origin/${{ secrets.BRANCH_NAME }}
+            git reset --hard origin/deva
 
             echo "📦 Installing Composer dependencies..."
             composer install --no-interaction --prefer-dist --optimize-autoloader
@@ -41,11 +40,11 @@ jobs:
             php artisan optimize:clear
             php artisan optimize
 
-            echo "🔐 Fixing storage & cache permissions..."
-            chmod -R 775 storage bootstrap/cache
-            chown -R deva:www-data storage bootstrap/cache
+            echo "🔐 Fixing permissions..."
+            sudo chown -R deva:www-data storage bootstrap/cache
+            sudo chmod -R 775 storage bootstrap/cache
 
             echo "🔁 Reloading Nginx..."
             sudo systemctl reload nginx
 
-            echo "✅ Deployment completed successfully!!"
+            echo "🎉 Deployment complete!"

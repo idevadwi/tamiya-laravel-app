@@ -98,3 +98,6 @@ Components are automatically registered in `resources/js/app.js` and can be used
 
 
 php artisan serve --host=0.0.0.0 --port=8000
+tamiya_laravel_db
+laravel_user
+StrongPassword123!

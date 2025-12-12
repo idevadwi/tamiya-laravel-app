@@ -316,7 +316,7 @@ return [
             'text' => 'search',
         ],
         [
-            'text' => 'Select Tournament ',
+            'text' => 'Select Tournament',
             'url' => 'home',
             'icon' => 'fas fa-fw fa-exchange-alt',
         ],
