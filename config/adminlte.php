@@ -316,7 +316,7 @@ return [
             'text' => 'search',
         ],
         [
-            'text' => 'Select Tournament',
+            'text' => 'Select Tournament ',
             'url' => 'home',
             'icon' => 'fas fa-fw fa-exchange-alt',
         ],
@@ -369,7 +369,7 @@ return [
             'active' => ['tournament-results*', 'tournament_results*'],
         ],
         [
-            'text' => 'Users',
+            'text' => 'Users Management',
             'url' => 'users',
             'icon' => 'fas fa-fw fa-user-shield',
             'active' => ['users*'],
