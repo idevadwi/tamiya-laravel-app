@@ -22,10 +22,12 @@ return Application::configure(basePath: dirname(__DIR__))
             'role'        => \App\Http\Middleware\RoleMiddleware::class,
             'role.web'    => \App\Http\Middleware\WebRoleMiddleware::class,
             'tournament.context' => \App\Http\Middleware\SetTournamentContext::class,
+            'locale'      => \App\Http\Middleware\SetLocale::class,
         ]);
 
-        // Apply tournament context middleware to all web routes
+        // Apply tournament context and locale middleware to all web routes
         $middleware->web(append: [
+            \App\Http\Middleware\SetLocale::class,
             \App\Http\Middleware\SetTournamentContext::class,
         ]);
 

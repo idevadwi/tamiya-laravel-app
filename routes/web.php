@@ -5,10 +5,14 @@ use App\Http\Controllers\TournamentController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\LanguageController;
 use App\Models\TournamentParticipant;
 use App\Models\Racer;
 use App\Models\Card;
 use App\Models\Race;
+
+// Language switching
+Route::post('/language/switch', [LanguageController::class, 'switch'])->name('language.switch');
 
 // Authentication routes
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
