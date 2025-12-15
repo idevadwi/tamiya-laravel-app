@@ -558,6 +558,69 @@
 @section('js')
 <script>
 $(document).ready(function() {
+    // Initialize Speech Synthesis
+    const synth = window.speechSynthesis;
+    let indonesianVoice = null;
+    
+    // Load voices (voices may load asynchronously)
+    function loadVoices() {
+        const voices = synth.getVoices();
+        
+        // Try to find Indonesian voice
+        indonesianVoice = voices.find(voice => voice.lang.startsWith('id'));
+        
+        // Debug: Log available Indonesian voices
+        console.log('Available Indonesian voices:', voices.filter(v => v.lang.startsWith('id')));
+        console.log('All available voices:', voices.map(v => `${v.name} (${v.lang})`));
+        
+        if (indonesianVoice) {
+            console.log('Using Indonesian voice:', indonesianVoice.name);
+        } else {
+            console.log('No Indonesian voice found, using default voice');
+        }
+    }
+    
+    // Load voices on page load and when voices change
+    loadVoices();
+    if (synth.onvoiceschanged !== undefined) {
+        synth.onvoiceschanged = loadVoices;
+    }
+    
+    // Function to speak race number
+    function speakRaceNumber(raceNo) {
+        // Cancel any ongoing speech
+        synth.cancel();
+        
+        // Create utterance in Indonesian
+        // let text = `Reis ke ${raceNo}`;
+        let text = `Persiapan reis ke ${raceNo}, panggilan pertama reis ke ${raceNo}, panggilan kedua reis ke ${raceNo}, panggilan ketiga reis ke ${raceNo}. `;
+        text += `Sepuluh,sembilan,delapan,tujuh,enam,lima,empat,tiga,dua,satu. Einjin ON redi GOo !`;
+        // let text = `Einjin ON redi GOo !`;
+        
+        // If no Indonesian voice available, use simpler English that sounds clear
+        if (!indonesianVoice) {
+            text = `Race ${raceNo}`;
+        }
+        
+        const utterance = new SpeechSynthesisUtterance(text);
+        
+        // Set language to Indonesian if voice is available
+        if (indonesianVoice) {
+            utterance.lang = 'id-ID';
+            utterance.voice = indonesianVoice;
+        } else {
+            utterance.lang = 'en-US';
+        }
+        
+        // Configure voice settings to sound more masculine
+        utterance.rate = 1.1;  // Slightly slower (0.1 to 10)
+        utterance.pitch = 0.7;  // Lower pitch to sound more masculine (0 to 2)
+        utterance.volume = 1.0; // Max volume (0 to 1)
+        
+        // Speak
+        synth.speak(utterance);
+    }
+    
     // Handle race called checkbox
     $('.race-called-checkbox').on('change', function() {
         const checkbox = $(this);
@@ -565,6 +628,11 @@ $(document).ready(function() {
         const raceNo = checkbox.data('race-no');
         const isCalled = checkbox.is(':checked');
         const row = checkbox.closest('tr');
+
+        // Speak race number when checkbox is checked
+        if (isCalled) {
+            speakRaceNumber(raceNo);
+        }
 
         // Send AJAX request
         $.ajax({
