@@ -9,7 +9,7 @@
             <p class="text-muted mb-0">Tournament: <strong>{{ $tournament->tournament_name }}</strong></p>
         </div>
         <a href="{{ route('teams.create') }}" class="btn btn-primary">
-            <i class="fas fa-plus"></i> Create New Team
+            <i class="fas fa-plus"></i> Add Team
                 </a>
             </div>
 @stop
@@ -90,11 +90,11 @@
                                         <form action="{{ route('teams.destroy', $team->id) }}" 
                                               method="POST" 
                                               class="d-inline"
-                                              onsubmit="return confirm('Are you sure you want to remove this team from the tournament?');">
+                                              onsubmit="return confirm('Remove this team from the tournament?\n\nNote: The team will not be deleted and can be added to other tournaments.');">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-danger" title="Remove">
-                                                <i class="fas fa-trash"></i>
+                                            <button type="submit" class="btn btn-sm btn-danger" title="Remove from Tournament">
+                                                <i class="fas fa-times-circle"></i>
                                             </button>
                                         </form>
                                     </div>
@@ -104,7 +104,7 @@
                             <tr>
                                 <td colspan="4" class="text-center">
                                     No teams found in this tournament. 
-                                    <a href="{{ route('teams.create') }}">Create one now</a>.
+                                    <a href="{{ route('teams.create') }}">Add one now</a>.
                                 </td>
                             </tr>
                         @endforelse

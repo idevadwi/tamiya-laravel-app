@@ -97,6 +97,10 @@ Route::get('/dashboard', function () {
 // Teams CRUD - requires active tournament
 Route::middleware('tournament.context')->group(function () {
     Route::resource('teams', TeamController::class);
+    
+    // Racer update with card - must be before resource route
+    Route::post('/racers/{racer}/update-with-card', [\App\Http\Controllers\RacerController::class, 'updateWithCard'])->name('racers.updateWithCard');
+    
     Route::resource('racers', \App\Http\Controllers\RacerController::class);
     Route::resource('cards', \App\Http\Controllers\CardController::class);
     Route::resource('races', \App\Http\Controllers\RaceController::class);

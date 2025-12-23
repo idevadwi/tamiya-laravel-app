@@ -327,34 +327,129 @@ class RacerController extends Controller
     }
 
     /**
-     * Remove the specified racer.
+     * Update the specified racer along with card information.
      */
-    public function destroy(Racer $racer)
+    public function updateWithCard(Request $request, Racer $racer)
     {
         $tournament = getActiveTournament();
         
         if (!$tournament) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Please select a tournament first.'
+            ], 400);
+        }
+
+        $validated = $request->validate([
+            'racer_name' => 'required|string|max:255',
+            'card_code' => 'nullable|string|max:255',
+            'card_id' => 'nullable|string',
+        ]);
+
+        // Update racer name
+        $racer->update([
+            'racer_name' => $validated['racer_name'],
+            'updated_by' => auth()->id(),
+        ]);
+
+        // Handle card update
+        $cardId = $validated['card_id'] ?? null;
+        $cardCode = $validated['card_code'] ?? null;
+
+        if ($cardId) {
+            // Update existing card
+            $card = Card::find($cardId);
+            if ($card && $card->racer_id === $racer->id) {
+                if ($cardCode) {
+                    // Check if card code is unique (excluding current card)
+                    $existingCard = Card::where('card_code', $cardCode)
+                        ->where('id', '!=', $cardId)
+                        ->first();
+                    
+                    if ($existingCard) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Card code already exists.'
+                        ], 422);
+                    }
+                    
+                    $card->update([
+                        'card_code' => $cardCode,
+                        'updated_by' => auth()->id(),
+                    ]);
+                } else {
+                    // Delete card if code is empty
+                    $card->delete();
+                }
+            }
+        } elseif ($cardCode) {
+            // Create new card if code provided but no existing card
+            $existingCard = Card::where('card_code', $cardCode)->first();
+            
+            if ($existingCard) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Card code already exists.'
+                ], 422);
+            }
+            
+            Card::create([
+                'id' => Str::uuid(),
+                'card_code' => $cardCode,
+                'racer_id' => $racer->id,
+                'coupon' => 0,
+                'status' => 'ACTIVE',
+                'created_by' => auth()->id(),
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Racer updated successfully.'
+        ], 200);
+    }
+
+    /**
+     * Remove the specified racer and all associated cards.
+     */
+    public function destroy(Request $request, Racer $racer)
+    {
+        $tournament = getActiveTournament();
+        
+        if (!$tournament) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Please select a tournament first.'
+                ], 400);
+            }
             return redirect()->route('home')
                 ->with('error', 'Please select a tournament first.');
         }
 
-        // Verify racer's team belongs to active tournament
+        // Verify racer's team belongs to active tournament (or is unassigned)
         if ($racer->team_id) {
             $isValidTeam = TournamentParticipant::where('tournament_id', $tournament->id)
                 ->where('team_id', $racer->team_id)
                 ->exists();
 
             if (!$isValidTeam) {
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Racer does not belong to the active tournament.'
+                    ], 403);
+                }
                 return redirect()->route('racers.index')
                     ->with('error', 'Racer does not belong to the active tournament.');
             }
         }
 
-        // Check if racer has cards
-        if ($racer->cards()->count() > 0) {
-            return redirect()->route('racers.index')
-                ->with('error', 'Cannot delete racer. It has cards assigned. Please remove cards first.');
-        }
+        // Count cards for the message
+        $cardCount = $racer->cards()->count();
+        
+        // Delete all associated cards
+        $racer->cards()->delete();
 
         // Delete image if exists
         if ($racer->image && Storage::disk('public')->exists($racer->image)) {
@@ -363,8 +458,20 @@ class RacerController extends Controller
 
         $racer->delete();
 
+        $message = $cardCount > 0 
+            ? "Racer deleted successfully along with {$cardCount} associated card(s)."
+            : 'Racer deleted successfully.';
+
+        // Return JSON response for AJAX requests
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => $message
+            ], 200);
+        }
+
         return redirect()->route('racers.index')
-            ->with('success', 'Racer deleted successfully.');
+            ->with('success', $message);
     }
 }
 
