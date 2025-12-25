@@ -8,7 +8,7 @@
             <h1>Edit Racer</h1>
             <p class="text-muted mb-0">Tournament: <strong>{{ $tournament->tournament_name }}</strong></p>
         </div>
-        <a href="{{ route('racers.index') }}" class="btn btn-default">
+        <a href="{{ route('tournament.racers.index') }}" class="btn btn-default">
             <i class="fas fa-arrow-left"></i> Back to Racers
         </a>
     </div>
@@ -19,7 +19,7 @@
         <div class="card-header">
             <h3 class="card-title">Racer Information</h3>
         </div>
-        <form action="{{ route('racers.update', $racer->id) }}" method="POST" enctype="multipart/form-data">
+        <form action="{{ route('tournament.racers.update', $racer->id) }}" method="POST" enctype="multipart/form-data">
             @csrf
             @method('PUT')
             <div class="card-body">
@@ -107,7 +107,7 @@
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-save"></i> Update Racer
                 </button>
-                <a href="{{ route('racers.index') }}" class="btn btn-default">
+                <a href="{{ route('tournament.racers.index') }}" class="btn btn-default">
                     <i class="fas fa-times"></i> Cancel
                 </a>
             </div>

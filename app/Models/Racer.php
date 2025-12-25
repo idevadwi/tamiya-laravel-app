@@ -34,6 +34,11 @@ class Racer extends Model
         return $this->hasMany(TournamentResult::class);
     }
 
+    public function tournamentRacerParticipants()
+    {
+        return $this->hasMany(TournamentRacerParticipant::class);
+    }
+
     /**
      * Get the full URL for the racer's image.
      */

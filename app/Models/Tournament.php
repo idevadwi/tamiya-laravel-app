@@ -12,10 +12,20 @@ class Tournament extends Model
     public $incrementing = false;
     protected $keyType = 'string';
     protected $fillable = [
-        'tournament_name', 'vendor_name', 'current_stage', 'current_bto_session',
-        'track_number', 'bto_number', 'bto_session_number', 'max_racer_per_team',
-        'champion_number', 'best_race_enabled', 'best_race_number', 'status',
-        'created_by', 'updated_by'
+        'tournament_name',
+        'vendor_name',
+        'current_stage',
+        'current_bto_session',
+        'track_number',
+        'bto_number',
+        'bto_session_number',
+        'max_racer_per_team',
+        'champion_number',
+        'best_race_enabled',
+        'best_race_number',
+        'status',
+        'created_by',
+        'updated_by'
     ];
 
     public function tokens()
@@ -53,6 +63,11 @@ class Tournament extends Model
     public function results()
     {
         return $this->hasMany(TournamentResult::class);
+    }
+
+    public function tournamentRacerParticipants()
+    {
+        return $this->hasMany(TournamentRacerParticipant::class);
     }
 
     protected static function boot()

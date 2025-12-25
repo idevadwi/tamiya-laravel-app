@@ -18,7 +18,7 @@ class RaceController extends Controller
     public function index(Request $request)
     {
         $tournament = getActiveTournament();
-        
+
         if (!$tournament) {
             return redirect()->route('home')
                 ->with('error', 'Please select a tournament first.');
@@ -75,22 +75,22 @@ class RaceController extends Controller
         foreach ($allRaces as $race) {
             $stage = $race->stage;
             $raceNo = $race->race_no ?? 0;
-            
+
             if (!isset($racesByStage[$stage])) {
                 $racesByStage[$stage] = [];
             }
-            
+
             if (!isset($racesByStage[$stage][$raceNo])) {
                 $racesByStage[$stage][$raceNo] = [];
             }
-            
+
             // Store race by lane (A, B, C, D, E, F, etc.)
             $racesByStage[$stage][$raceNo][$race->lane] = $race;
         }
 
         // Get the selected stage or use the first available stage
-        $selectedStage = $request->has('stage') && $request->stage !== '' 
-            ? (int)$request->stage 
+        $selectedStage = $request->has('stage') && $request->stage !== ''
+            ? (int) $request->stage
             : ($stages->first() ?? null);
 
         // Get race numbers for the selected stage
@@ -104,11 +104,11 @@ class RaceController extends Controller
         $maxRaceNo = max(12, $raceNumbers ? max($raceNumbers) : 0);
 
         return view('races.index', compact(
-            'racesByStage', 
-            'tournament', 
-            'stages', 
-            'tracks', 
-            'teams', 
+            'racesByStage',
+            'tournament',
+            'stages',
+            'tracks',
+            'teams',
             'selectedStage',
             'raceNumbers',
             'maxRaceNo',
@@ -122,7 +122,7 @@ class RaceController extends Controller
     public function create(Request $request)
     {
         $tournament = getActiveTournament();
-        
+
         if (!$tournament) {
             return redirect()->route('home')
                 ->with('error', 'Please select a tournament first.');
@@ -152,7 +152,7 @@ class RaceController extends Controller
     public function store(Request $request)
     {
         $tournament = getActiveTournament();
-        
+
         if (!$tournament) {
             return redirect()->route('home')
                 ->with('error', 'Please select a tournament first.');
@@ -231,7 +231,7 @@ class RaceController extends Controller
             'created_by' => auth()->id(),
         ]);
 
-        return redirect()->route('races.index')
+        return redirect()->route('tournament.races.index')
             ->with('success', "Race created successfully. Stage: {$stage}, Race No: {$trackAndLane['race_no']}, Track: {$trackAndLane['track']}, Lane: {$trackAndLane['lane']}");
     }
 
@@ -286,7 +286,7 @@ class RaceController extends Controller
     public function toggleCalled(Request $request)
     {
         $tournament = getActiveTournament();
-        
+
         if (!$tournament) {
             return response()->json(['error' => 'No active tournament'], 400);
         }

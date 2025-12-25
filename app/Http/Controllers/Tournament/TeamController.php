@@ -1,9 +1,11 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Tournament;
 
+use App\Http\Controllers\Controller;
 use App\Models\Team;
 use App\Models\TournamentParticipant;
+use App\Models\TournamentRacerParticipant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -34,11 +36,11 @@ class TeamController extends Controller
         $teams = $query->latest()->paginate(10);
         $teams->appends($request->query());
 
-        return view('teams.index', compact('teams', 'tournament'));
+        return view('tournament.teams.index', compact('teams', 'tournament'));
     }
 
     /**
-     * Show the form for creating a new team.
+     * Show the form for creating a new team (adding to tournament).
      */
     public function create()
     {
@@ -60,7 +62,7 @@ class TeamController extends Controller
             ->orderBy('team_name')
             ->get();
 
-        return view('teams.create', compact('tournament', 'availableTeams'));
+        return view('tournament.teams.create', compact('tournament', 'availableTeams'));
     }
 
     /**
@@ -91,7 +93,7 @@ class TeamController extends Controller
                 ->exists();
 
             if ($alreadyExists) {
-                return redirect()->route('teams.create')
+                return redirect()->route('tournament.teams.create')
                     ->with('error', 'This team is already in the tournament.');
             }
 
@@ -127,7 +129,7 @@ class TeamController extends Controller
 
             // Create TournamentRacerParticipant records for selected racers
             foreach ($selectedRacerIds as $racerId) {
-                \App\Models\TournamentRacerParticipant::create([
+                TournamentRacerParticipant::create([
                     'id' => Str::uuid(),
                     'tournament_id' => $tournament->id,
                     'team_id' => $team->id,
@@ -137,7 +139,7 @@ class TeamController extends Controller
                 ]);
             }
 
-            return redirect()->route('teams.show', $team->id)
+            return redirect()->route('tournament.teams.show', $team->id)
                 ->with('success', "Team added to tournament with " . count($selectedRacerIds) . " active racer(s).");
         } else {
             // Create new team
@@ -160,7 +162,7 @@ class TeamController extends Controller
                 'created_by' => auth()->id(),
             ]);
 
-            return redirect()->route('teams.show', $team->id)
+            return redirect()->route('tournament.teams.show', $team->id)
                 ->with('success', 'Team created successfully. You can now add racers to the team.');
         }
     }
@@ -183,7 +185,7 @@ class TeamController extends Controller
             ->exists();
 
         if (!$isParticipant) {
-            return redirect()->route('teams.index')
+            return redirect()->route('tournament.teams.index')
                 ->with('error', 'Team does not belong to the active tournament.');
         }
 
@@ -191,13 +193,13 @@ class TeamController extends Controller
         $racers = $team->racers()->with('cards')->withCount('cards')->latest()->get();
 
         // Load active racer status for this tournament
-        $activeRacerIds = \App\Models\TournamentRacerParticipant::where('tournament_id', $tournament->id)
+        $activeRacerIds = TournamentRacerParticipant::where('tournament_id', $tournament->id)
             ->where('team_id', $team->id)
             ->where('is_active', true)
             ->pluck('racer_id')
             ->toArray();
 
-        return view('teams.show', compact('team', 'tournament', 'racers', 'activeRacerIds'));
+        return view('tournament.teams.show', compact('team', 'tournament', 'racers', 'activeRacerIds'));
     }
 
     /**
@@ -218,11 +220,11 @@ class TeamController extends Controller
             ->exists();
 
         if (!$isParticipant) {
-            return redirect()->route('teams.index')
+            return redirect()->route('tournament.teams.index')
                 ->with('error', 'Team does not belong to the active tournament.');
         }
 
-        return view('teams.edit', compact('team', 'tournament'));
+        return view('tournament.teams.edit', compact('team', 'tournament'));
     }
 
     /**
@@ -243,7 +245,7 @@ class TeamController extends Controller
             ->exists();
 
         if (!$isParticipant) {
-            return redirect()->route('teams.index')
+            return redirect()->route('tournament.teams.index')
                 ->with('error', 'Team does not belong to the active tournament.');
         }
 
@@ -256,7 +258,7 @@ class TeamController extends Controller
             'updated_by' => auth()->id(),
         ]);
 
-        return redirect()->route('teams.index')
+        return redirect()->route('tournament.teams.index')
             ->with('success', 'Team updated successfully.');
     }
 
@@ -278,15 +280,19 @@ class TeamController extends Controller
             ->first();
 
         if (!$participant) {
-            return redirect()->route('teams.index')
+            return redirect()->route('tournament.teams.index')
                 ->with('error', 'Team does not belong to the active tournament.');
         }
 
         // Remove team from tournament (only delete TournamentParticipant relationship)
         $participant->delete();
 
-        return redirect()->route('teams.index')
-            ->with('success', 'Team removed from tournament successfully. The team can be added to other tournaments.');
+        // Also remove racer participants
+        TournamentRacerParticipant::where('tournament_id', $tournament->id)
+            ->where('team_id', $team->id)
+            ->delete();
+
+        return redirect()->route('tournament.teams.index')
+            ->with('success', 'Team removed from tournament successfully.');
     }
 }
-

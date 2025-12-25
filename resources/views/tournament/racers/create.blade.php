@@ -8,7 +8,7 @@
             <h1>Create New Racer</h1>
             <p class="text-muted mb-0">Tournament: <strong>{{ $tournament->tournament_name }}</strong></p>
         </div>
-        <a href="{{ route('racers.index') }}" class="btn btn-default">
+        <a href="{{ route('tournament.racers.index') }}" class="btn btn-default">
             <i class="fas fa-arrow-left"></i> Back to Racers
         </a>
     </div>
@@ -19,7 +19,7 @@
         <div class="card-header">
             <h3 class="card-title">Racer Information</h3>
         </div>
-        <form action="{{ route('racers.store') }}" method="POST" enctype="multipart/form-data">
+        <form action="{{ route('tournament.racers.store') }}" method="POST" enctype="multipart/form-data">
             @csrf
             <div class="card-body">
                 <div class="row">
@@ -99,7 +99,7 @@
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-save"></i> Create Racer
                 </button>
-                <a href="{{ route('racers.index') }}" class="btn btn-default">
+                <a href="{{ route('tournament.racers.index') }}" class="btn btn-default">
                     <i class="fas fa-times"></i> Cancel
                 </a>
             </div>

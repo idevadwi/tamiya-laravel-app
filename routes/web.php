@@ -19,9 +19,9 @@ Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
-// Tournament selector (home page) - no middleware needed
-Route::get('/', [TournamentController::class, 'selector'])->name('home');
-Route::get('/home', [TournamentController::class, 'selector'])->name('home.alt');
+// Tournament selector (home page) - requires auth
+Route::get('/', [TournamentController::class, 'selector'])->name('home')->middleware('auth');
+Route::get('/home', [TournamentController::class, 'selector'])->name('home.alt')->middleware('auth');
 
 // Tournament selection
 Route::post('/tournaments/select', [TournamentController::class, 'select'])->name('tournaments.select');
@@ -36,9 +36,9 @@ Route::middleware(['auth', 'role.web:ADMINISTRATOR'])->group(function () {
     // Settings routes must be defined before resource route to avoid conflicts
     Route::get('/tournaments/{tournament}/settings', [TournamentController::class, 'settings'])->name('tournaments.settings');
     Route::put('/tournaments/{tournament}/settings', [TournamentController::class, 'updateSettings'])->name('tournaments.settings.update');
-    
+
     Route::resource('tournaments', TournamentController::class);
-    
+
     // Moderator assignment routes (Admin only)
     Route::get('/tournaments/{tournament}/moderators', [TournamentController::class, 'moderators'])->name('tournaments.moderators');
     Route::post('/tournaments/{tournament}/moderators', [TournamentController::class, 'assignModerator'])->name('tournaments.moderators.assign');
@@ -50,25 +50,25 @@ Route::get('/dashboard', function () {
     if (!hasActiveTournament()) {
         return redirect()->route('home')->with('error', 'Please select a tournament first.');
     }
-    
+
     $tournament = getActiveTournament();
-    
+
     // Get teams in the active tournament
-    $teamIds = TournamentParticipant::where('tournament_id', $tournament->id)
+    $teamIds = App\Models\TournamentParticipant::where('tournament_id', $tournament->id)
         ->pluck('team_id');
-    
+
     // Count total racers in those teams
     $totalRacers = Racer::whereIn('team_id', $teamIds)->count();
-    
+
     // Get racer IDs from those teams
     $racerIds = Racer::whereIn('team_id', $teamIds)->pluck('id');
-    
+
     // Count total cards for those racers
     $totalCards = Card::whereIn('racer_id', $racerIds)->count();
 
     // Get highest race number for the active tournament
     $raceCount = Race::where('tournament_id', $tournament->id)->max('race_no') ?? 0;
-    
+
     // Get best times OVERALL for each track
     $bestTimesOverall = \App\Models\BestTime::where('tournament_id', $tournament->id)
         ->where('scope', 'OVERALL')
@@ -77,10 +77,10 @@ Route::get('/dashboard', function () {
         ->orderBy('timer')
         ->get()
         ->groupBy('track');
-    
+
     // Get current session number
     $currentSession = $tournament->current_bto_session;
-    
+
     // Get best times for current SESSION for each track
     $bestTimesSession = \App\Models\BestTime::where('tournament_id', $tournament->id)
         ->where('scope', 'SESSION')
@@ -90,31 +90,54 @@ Route::get('/dashboard', function () {
         ->orderBy('timer')
         ->get()
         ->groupBy('track');
-    
-    return view('dashboard', compact('totalRacers', 'totalCards', 'raceCount', 'bestTimesOverall', 'currentSession', 'bestTimesSession'));
-})->name('dashboard')->middleware('tournament.context');
 
-// Teams CRUD - requires active tournament
-Route::middleware('tournament.context')->group(function () {
-    Route::resource('teams', TeamController::class);
-    
-    // Racer update with card - must be before resource route
-    Route::post('/racers/{racer}/update-with-card', [\App\Http\Controllers\RacerController::class, 'updateWithCard'])->name('racers.updateWithCard');
-    
-    Route::resource('racers', \App\Http\Controllers\RacerController::class);
-    Route::resource('cards', \App\Http\Controllers\CardController::class);
+    return view('dashboard', compact('totalRacers', 'totalCards', 'raceCount', 'bestTimesOverall', 'currentSession', 'bestTimesSession'));
+})->name('dashboard')->middleware(['auth', 'tournament.context']);
+
+// Admin Master Data Routes (Global Management)
+Route::middleware(['auth', 'role.web:ADMINISTRATOR'])->prefix('admin')->name('admin.')->group(function () {
+    Route::resource('teams', App\Http\Controllers\Admin\MasterTeamController::class);
+    Route::resource('racers', App\Http\Controllers\Admin\MasterRacerController::class);
+
+    // Card bulk create routes
+    Route::get('cards/bulk-create', [App\Http\Controllers\Admin\MasterCardController::class, 'bulkCreate'])->name('cards.bulk-create');
+    Route::post('cards/bulk-create', [App\Http\Controllers\Admin\MasterCardController::class, 'bulkStore'])->name('cards.bulk-store');
+    Route::resource('cards', App\Http\Controllers\Admin\MasterCardController::class);
+});
+
+// Tournament Routes (Moderator + Admin Scope)
+Route::middleware(['auth', 'role.web:ADMINISTRATOR,MODERATOR', 'tournament.context'])->prefix('tournament')->name('tournament.')->group(function () {
+    Route::resource('teams', App\Http\Controllers\Tournament\TeamController::class);
+
+    // Racer custom routes
+    Route::post('/racers/{racer}/toggle-status', [App\Http\Controllers\Tournament\RacerController::class, 'toggleStatus'])->name('racers.toggle-status');
+    Route::post('/racers/{racer}/update-with-card', [App\Http\Controllers\Tournament\RacerController::class, 'updateWithCard'])->name('racers.updateWithCard');
+    Route::resource('racers', App\Http\Controllers\Tournament\RacerController::class);
+
+    Route::resource('cards', App\Http\Controllers\Tournament\CardController::class);
+
+    // Keep other tournament resources here for now but pointing to original controllers
+    // Eventually these should be moved to Tournament namespace too
+    // Note: We're not aliasing them to 'tournament.' prefix yet to avoid breaking too many things at once,
+    // but the plan implied restructuring. For now, let's keep specific data (Team/Racer/Card) separate.
+    // The user ONLY asked for split of Master Data (Team, Racer, Cards).
+
     Route::resource('races', \App\Http\Controllers\RaceController::class);
     Route::post('/races/toggle-called', [\App\Http\Controllers\RaceController::class, 'toggleCalled'])->name('races.toggleCalled');
-    
+
     // Best Times management
     Route::resource('best_times', \App\Http\Controllers\BestTimeController::class);
-    
+
     // Tournament Results management
     Route::get('/tournament-results', [\App\Http\Controllers\TournamentResultController::class, 'index'])->name('tournament_results.index');
     Route::post('/tournament-results', [\App\Http\Controllers\TournamentResultController::class, 'store'])->name('tournament_results.store');
     Route::delete('/tournament-results/{id}', [\App\Http\Controllers\TournamentResultController::class, 'destroy'])->name('tournament_results.destroy');
-    
+
     // Proceed to next stage
     Route::post('/tournaments/next-stage', [TournamentController::class, 'nextStage'])->name('tournaments.nextStage');
+
 });
+
+
+
 

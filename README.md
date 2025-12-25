@@ -109,3 +109,7 @@ PICK TEAM FROM EXISTING TEAM DONE
 DELETE RACER IN TEAM DONE
 IF RACER DELETED, ALSO DELETE CARD DONE
 IN TEAM, SHOW DIALOG TO MODIFY RACER(NAME & CARD)
+
+
+select racer from team to participated in tournament
+so we can use existing team, but each tournament, team can select different racers

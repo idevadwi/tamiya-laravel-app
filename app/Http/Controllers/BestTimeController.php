@@ -15,7 +15,7 @@ class BestTimeController extends Controller
     public function index(Request $request)
     {
         $tournament = getActiveTournament();
-        
+
         if (!$tournament) {
             return redirect()->route('home')
                 ->with('error', 'Please select a tournament first.');
@@ -68,7 +68,7 @@ class BestTimeController extends Controller
     public function create()
     {
         $tournament = getActiveTournament();
-        
+
         if (!$tournament) {
             return redirect()->route('home')
                 ->with('error', 'Please select a tournament first.');
@@ -91,7 +91,7 @@ class BestTimeController extends Controller
     public function store(Request $request)
     {
         $tournament = getActiveTournament();
-        
+
         if (!$tournament) {
             return redirect()->route('home')
                 ->with('error', 'Please select a tournament first.');
@@ -177,7 +177,7 @@ class BestTimeController extends Controller
             $this->updateOverallIfBetter($tournament->id, $validated['team_id'], $validated['track'], $validated['timer']);
         }
 
-        return redirect()->route('best_times.index')
+        return redirect()->route('tournament.best_times.index')
             ->with('success', 'Best time recorded successfully.');
     }
 
@@ -187,7 +187,7 @@ class BestTimeController extends Controller
     public function edit(BestTime $bestTime)
     {
         $tournament = getActiveTournament();
-        
+
         if (!$tournament) {
             return redirect()->route('home')
                 ->with('error', 'Please select a tournament first.');
@@ -195,7 +195,7 @@ class BestTimeController extends Controller
 
         // Verify best time belongs to active tournament
         if ($bestTime->tournament_id !== $tournament->id) {
-            return redirect()->route('best_times.index')
+            return redirect()->route('tournament.best_times.index')
                 ->with('error', 'Best time does not belong to the active tournament.');
         }
 
@@ -219,7 +219,7 @@ class BestTimeController extends Controller
     public function update(Request $request, BestTime $bestTime)
     {
         $tournament = getActiveTournament();
-        
+
         if (!$tournament) {
             return redirect()->route('home')
                 ->with('error', 'Please select a tournament first.');
@@ -227,7 +227,7 @@ class BestTimeController extends Controller
 
         // Verify best time belongs to active tournament
         if ($bestTime->tournament_id !== $tournament->id) {
-            return redirect()->route('best_times.index')
+            return redirect()->route('tournament.best_times.index')
                 ->with('error', 'Best time does not belong to the active tournament.');
         }
 
@@ -314,7 +314,7 @@ class BestTimeController extends Controller
             $this->updateOverallIfBetter($tournament->id, $validated['team_id'], $validated['track'], $validated['timer']);
         }
 
-        return redirect()->route('best_times.index')
+        return redirect()->route('tournament.best_times.index')
             ->with('success', 'Best time updated successfully.');
     }
 
@@ -324,7 +324,7 @@ class BestTimeController extends Controller
     public function destroy(BestTime $bestTime)
     {
         $tournament = getActiveTournament();
-        
+
         if (!$tournament) {
             return redirect()->route('home')
                 ->with('error', 'Please select a tournament first.');
@@ -332,13 +332,13 @@ class BestTimeController extends Controller
 
         // Verify best time belongs to active tournament
         if ($bestTime->tournament_id !== $tournament->id) {
-            return redirect()->route('best_times.index')
+            return redirect()->route('tournament.best_times.index')
                 ->with('error', 'Best time does not belong to the active tournament.');
         }
 
         $bestTime->delete();
 
-        return redirect()->route('best_times.index')
+        return redirect()->route('tournament.best_times.index')
             ->with('success', 'Best time deleted successfully.');
     }
 
@@ -359,7 +359,7 @@ class BestTimeController extends Controller
 
         if ($overallRecord) {
             $currentTimeInSeconds = $this->timerToSeconds($overallRecord->timer);
-            
+
             // If new time is better (lower), update the OVERALL record
             if ($newTimeInSeconds < $currentTimeInSeconds) {
                 $overallRecord->update([
@@ -387,9 +387,9 @@ class BestTimeController extends Controller
     private function timerToSeconds($timer)
     {
         $parts = explode(':', $timer);
-        $seconds = (int)$parts[0];
-        $milliseconds = (int)$parts[1];
-        
+        $seconds = (int) $parts[0];
+        $milliseconds = (int) $parts[1];
+
         return ($seconds * 100) + $milliseconds; // Convert to centiseconds for comparison
     }
 }

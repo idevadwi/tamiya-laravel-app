@@ -8,7 +8,7 @@
             <h1>Edit Best Time</h1>
             <p class="text-muted mb-0">Tournament: <strong>{{ $tournament->tournament_name }}</strong></p>
         </div>
-        <a href="{{ route('best_times.index') }}" class="btn btn-default">
+        <a href="{{ route('tournament.best_times.index') }}" class="btn btn-default">
             <i class="fas fa-arrow-left"></i> Back to Best Times
         </a>
     </div>
@@ -28,7 +28,7 @@
         <div class="card-header">
             <h3 class="card-title">Best Time Information</h3>
         </div>
-        <form action="{{ route('best_times.update', $bestTime->id) }}" method="POST">
+        <form action="{{ route('tournament.best_times.update', $bestTime->id) }}" method="POST">
             @csrf
             @method('PUT')
             <div class="card-body">
@@ -175,7 +175,7 @@
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-save"></i> Update Best Time
                 </button>
-                <a href="{{ route('best_times.index') }}" class="btn btn-default">
+                <a href="{{ route('tournament.best_times.index') }}" class="btn btn-default">
                     <i class="fas fa-times"></i> Cancel
                 </a>
             </div>

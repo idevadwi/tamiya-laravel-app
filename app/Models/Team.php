@@ -33,6 +33,11 @@ class Team extends Model
         return $this->hasMany(TournamentResult::class);
     }
 
+    public function tournamentRacerParticipants()
+    {
+        return $this->hasMany(TournamentRacerParticipant::class);
+    }
+
     protected static function boot()
     {
         parent::boot();

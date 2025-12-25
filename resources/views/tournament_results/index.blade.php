@@ -57,7 +57,7 @@
         </div>
     </div>
 
-    <form action="{{ route('tournament_results.store') }}" method="POST" id="resultsForm">
+    <form action="{{ route('tournament.tournament_results.store') }}" method="POST" id="resultsForm">
         @csrf
 
         {{-- Main Champions --}}

@@ -11,14 +11,14 @@
         </div>
         <div class="d-flex">
             <div class="btn-group mr-2">
-                <a href="{{ route('races.index', array_merge(request()->all(), ['view' => 'team'])) }}" class="btn btn-default {{ $viewMode === 'team' ? 'active' : '' }}">
+                <a href="{{ route('tournament.races.index', array_merge(request()->all(), ['view' => 'team'])) }}" class="btn btn-default {{ $viewMode === 'team' ? 'active' : '' }}">
                     Races - Team Only
                 </a>
-                <a href="{{ route('races.index', array_merge(request()->all(), ['view' => 'with_racer'])) }}" class="btn btn-default {{ $viewMode === 'with_racer' ? 'active' : '' }}">
+                <a href="{{ route('tournament.races.index', array_merge(request()->all(), ['view' => 'with_racer'])) }}" class="btn btn-default {{ $viewMode === 'with_racer' ? 'active' : '' }}">
                     Races - With Racer
                 </a>
             </div>
-            <a href="{{ route('races.create', request()->only(['stage', 'track', 'team_id'])) }}" class="btn btn-primary">
+            <a href="{{ route('tournament.races.create', request()->only(['stage', 'track', 'team_id'])) }}" class="btn btn-primary">
                 <i class="fas fa-plus"></i> Add New Race
             </a>
         </div>
@@ -48,7 +48,7 @@
         <div class="card-header">
             <h3 class="card-title">Races in Tournament</h3>
             <div class="card-tools">
-                <form method="GET" action="{{ route('races.index') }}" class="form-inline" id="raceFilterForm">
+                <form method="GET" action="{{ route('tournament.races.index') }}" class="form-inline" id="raceFilterForm">
                     <input type="hidden" name="view" value="{{ $viewMode }}">
                     <div class="input-group input-group-sm mr-2">
                         <select name="stage" class="form-control" onchange="this.form.submit()" style="width: 120px;">
@@ -61,7 +61,7 @@
                         </select>
                     </div>
                     @if($selectedStage)
-                        <a href="{{ route('races.create', ['stage' => $selectedStage]) }}" class="btn btn-sm btn-primary">
+                        <a href="{{ route('tournament.races.create', ['stage' => $selectedStage]) }}" class="btn btn-sm btn-primary">
                             <i class="fas fa-plus"></i> Add Race
                         </a>
                     @endif
@@ -636,7 +636,7 @@ $(document).ready(function() {
 
         // Send AJAX request
         $.ajax({
-            url: '{{ route("races.toggleCalled") }}',
+            url: '{{ route("tournament.races.toggleCalled") }}',
             method: 'POST',
             data: {
                 _token: '{{ csrf_token() }}',

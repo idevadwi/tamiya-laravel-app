@@ -24,5 +24,10 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('isAdministrator', function ($user) {
             return $user->hasRole('ADMINISTRATOR');
         });
+
+        // Define gate for tournament access (Admin or Moderator)
+        Gate::define('accessTournament', function ($user) {
+            return $user->hasAnyRole(['ADMINISTRATOR', 'MODERATOR']);
+        });
     }
 }

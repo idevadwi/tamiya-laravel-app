@@ -20,7 +20,7 @@ class TournamentResultController extends Controller
     public function index()
     {
         $tournament = getActiveTournament();
-        
+
         if (!$tournament) {
             return redirect()->route('home')
                 ->with('error', 'Please select a tournament first.');
@@ -61,7 +61,7 @@ class TournamentResultController extends Controller
     public function store(Request $request)
     {
         $tournament = getActiveTournament();
-        
+
         if (!$tournament) {
             return redirect()->route('home')
                 ->with('error', 'Please select a tournament first.');
@@ -110,7 +110,7 @@ class TournamentResultController extends Controller
             }
 
             DB::commit();
-            return redirect()->route('tournament_results.index')
+            return redirect()->route('tournament.tournament_results.index')
                 ->with('success', 'Tournament results saved successfully!');
         } catch (\Exception $e) {
             DB::rollBack();
@@ -126,7 +126,7 @@ class TournamentResultController extends Controller
     public function destroy($id)
     {
         $tournament = getActiveTournament();
-        
+
         if (!$tournament) {
             return redirect()->route('home')
                 ->with('error', 'Please select a tournament first.');
@@ -138,7 +138,7 @@ class TournamentResultController extends Controller
 
         $result->delete();
 
-        return redirect()->route('tournament_results.index')
+        return redirect()->route('tournament.tournament_results.index')
             ->with('success', 'Tournament result deleted successfully!');
     }
 
