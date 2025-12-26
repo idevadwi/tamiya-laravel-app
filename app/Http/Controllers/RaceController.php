@@ -234,7 +234,7 @@ class RaceController extends Controller
         ]);
 
         // Publish best race update
-        $this->publishBestRaceUpdate($tournament);
+        // $this->publishBestRaceUpdate($tournament);
 
         return redirect()->route('tournament.races.index')
             ->with('success', "Race created successfully. Stage: {$stage}, Race No: {$trackAndLane['race_no']}, Track: {$trackAndLane['track']}, Lane: {$trackAndLane['lane']}");
