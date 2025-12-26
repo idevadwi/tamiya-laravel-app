@@ -65,6 +65,14 @@ class RaceController extends Controller
             ->pluck('team_id');
         $teams = Team::whereIn('id', $teamIds)->orderBy('team_name')->get();
 
+        // Get cards in the active tournament for modal
+        $racerIds = Racer::whereIn('team_id', $teamIds)->pluck('id');
+        $cards = Card::whereIn('racer_id', $racerIds)
+            ->where('status', 'ACTIVE')
+            ->with(['racer.team'])
+            ->orderBy('card_code')
+            ->get();
+
         // Get all races (no pagination for grid view)
         $allRaces = $query->orderBy('stage', 'desc')
             ->orderBy('race_no')
@@ -114,7 +122,8 @@ class RaceController extends Controller
             'selectedStage',
             'raceNumbers',
             'maxRaceNo',
-            'viewMode'
+            'viewMode',
+            'cards'
         ));
     }
 

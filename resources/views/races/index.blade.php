@@ -18,9 +18,9 @@
                     Races - With Racer
                 </a>
             </div>
-            <a href="{{ route('tournament.races.create', request()->only(['stage', 'track', 'team_id'])) }}" class="btn btn-primary">
+            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addRaceModal">
                 <i class="fas fa-plus"></i> Add New Race
-            </a>
+            </button>
         </div>
     </div>
 @stop
@@ -60,11 +60,6 @@
                             @endforeach
                         </select>
                     </div>
-                    @if($selectedStage)
-                        <a href="{{ route('tournament.races.create', ['stage' => $selectedStage]) }}" class="btn btn-sm btn-primary">
-                            <i class="fas fa-plus"></i> Add Race
-                        </a>
-                    @endif
                 </form>
             </div>
         </div>
@@ -178,6 +173,71 @@
             @endif
         </div>
     </div>
+
+    <!-- Add Race Modal -->
+    <div class="modal fade" id="addRaceModal" tabindex="-1" role="dialog" aria-labelledby="addRaceModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addRaceModalLabel">Add New Race</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="addRaceForm" action="{{ route('tournament.races.store') }}" method="POST">
+                @csrf
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Note:</strong> When you add a new race, it will be automatically assigned to:
+                        <ul class="mb-0 mt-2">
+                            <li><strong>Stage:</strong> {{ $tournament->current_stage + 1 }}</li>
+                            <li><strong>Track & Lane:</strong> Automatically calculated based on existing races in the stage</li>
+                            <li><strong>Racer & Team:</strong> Automatically retrieved from the selected card</li>
+                        </ul>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="card_id">Card <span class="text-danger">*</span></label>
+                        <select class="form-control" id="card_id" name="card_id" required>
+                            <option value="">Select a card...</option>
+                            @foreach($cards as $card)
+                                <option value="{{ $card->id }}">
+                                    {{ $card->card_code }}
+                                    @if($card->racer)
+                                        - {{ $card->racer->racer_name }}
+                                        @if($card->racer->team)
+                                            ({{ $card->racer->team->team_name }})
+                                        @endif
+                                    @else
+                                        - Unassigned
+                                    @endif
+                                </option>
+                            @endforeach
+                        </select>
+                        <small class="form-text text-muted">
+                            Select a card from the active tournament. Only ACTIVE cards are shown.
+                        </small>
+                    </div>
+
+                    @if($cards->isEmpty())
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <strong>No active cards available!</strong> Please create cards first or activate existing cards.
+                        </div>
+                    @endif
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary" {{ $cards->isEmpty() ? 'disabled' : '' }}>
+                        <i class="fas fa-save"></i> Create Race
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 @stop
 
 @section('css')
@@ -237,7 +297,7 @@
     }
 
     .race-schedule-table {
-        padding: 20px 0;
+        /* padding: 20px 0; */
         background: #F5F5F5;
         border-radius: 12px;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08);
@@ -568,16 +628,6 @@ $(document).ready(function() {
         
         // Try to find Indonesian voice
         indonesianVoice = voices.find(voice => voice.lang.startsWith('id'));
-        
-        // Debug: Log available Indonesian voices
-        console.log('Available Indonesian voices:', voices.filter(v => v.lang.startsWith('id')));
-        console.log('All available voices:', voices.map(v => `${v.name} (${v.lang})`));
-        
-        if (indonesianVoice) {
-            console.log('Using Indonesian voice:', indonesianVoice.name);
-        } else {
-            console.log('No Indonesian voice found, using default voice');
-        }
     }
     
     // Load voices on page load and when voices change
@@ -614,7 +664,7 @@ $(document).ready(function() {
         
         // Configure voice settings to sound more masculine
         utterance.rate = 1.1;  // Slightly slower (0.1 to 10)
-        utterance.pitch = 0.7;  // Lower pitch to sound more masculine (0 to 2)
+        utterance.pitch = 1.0;  // Lower pitch to sound more masculine (0 to 2)
         utterance.volume = 1.0; // Max volume (0 to 1)
         
         // Speak
@@ -656,6 +706,48 @@ $(document).ready(function() {
                 // Revert checkbox on error
                 checkbox.prop('checked', !isCalled);
                 alert('Failed to update race status. Please try again.');
+            }
+        });
+    });
+
+    // Handle Add Race Form Submission
+    $('#addRaceForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        const form = $(this);
+        const formData = new FormData(this);
+        formData.append('stage', {{ $tournament->current_stage + 1 }});
+
+        $.ajax({
+            url: form.attr('action'),
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                // Close modal
+                $('#addRaceModal').modal('hide');
+                
+                // Reset form
+                form[0].reset();
+                
+                // Reload page to show new race
+                location.reload();
+            },
+            error: function(xhr) {
+                let errorMessage = 'Failed to create race. Please try again.';
+                
+                if (xhr.responseJSON && xhr.responseJSON.errors) {
+                    const errors = xhr.responseJSON.errors;
+                    const firstError = Object.values(errors)[0];
+                    if (Array.isArray(firstError)) {
+                        errorMessage = firstError[0];
+                    } else {
+                        errorMessage = firstError;
+                    }
+                }
+                
+                alert(errorMessage);
             }
         });
     });
