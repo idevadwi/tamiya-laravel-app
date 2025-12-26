@@ -26,6 +26,27 @@
 @stop
 
 @section('content')
+    <!-- Speech Control Toast -->
+    <div id="speechToast" class="speech-toast" style="display: none;">
+        <div class="speech-toast-content">
+            <div class="speech-toast-header">
+                <i class="fas fa-volume-up speech-icon"></i>
+                <span class="speech-toast-title">Race Announcement</span>
+            </div>
+            <div class="speech-toast-body">
+                <span id="speechRaceNo" class="speech-race-no"></span>
+            </div>
+            <div class="speech-toast-footer">
+                <button type="button" id="speechPauseBtn" class="btn btn-sm btn-warning">
+                    <i class="fas fa-pause"></i> Pause
+                </button>
+                <button type="button" id="speechStopBtn" class="btn btn-sm btn-danger">
+                    <i class="fas fa-stop"></i> Stop
+                </button>
+            </div>
+        </div>
+    </div>
+
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show" role="alert">
             {{ session('success') }}
@@ -612,6 +633,122 @@
             transform: none;
         }
     }
+
+    /* Speech Control Toast Styles */
+    .speech-toast {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        animation: slideIn 0.3s ease-out;
+    }
+
+    @keyframes slideIn {
+        from {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    @keyframes slideOut {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+    }
+
+    .speech-toast.slide-out {
+        animation: slideOut 0.3s ease-out forwards;
+    }
+
+    .speech-toast-content {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        min-width: 320px;
+        overflow: hidden;
+    }
+
+    .speech-toast-header {
+        display: flex;
+        align-items: center;
+        padding: 16px;
+        background: rgba(255, 255, 255, 0.1);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .speech-icon {
+        font-size: 20px;
+        color: #ffffff;
+        margin-right: 12px;
+    }
+
+    .speech-toast-title {
+        color: #ffffff;
+        font-weight: 600;
+        font-size: 16px;
+    }
+
+    .speech-toast-body {
+        padding: 16px;
+        text-align: center;
+    }
+
+    .speech-race-no {
+        color: #ffffff;
+        font-size: 24px;
+        font-weight: 700;
+        letter-spacing: 2px;
+    }
+
+    .speech-toast-footer {
+        display: flex;
+        gap: 8px;
+        padding: 12px 16px;
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .speech-toast-footer .btn {
+        flex: 1;
+        font-size: 13px;
+        padding: 8px 12px;
+        border: none;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+
+    .speech-toast-footer .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .speech-toast-footer .btn:active {
+        transform: translateY(0);
+    }
+
+    /* Speaking indicator animation */
+    .speech-icon.speaking {
+        animation: pulse 1s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% {
+            transform: scale(1);
+            opacity: 1;
+        }
+        50% {
+            transform: scale(1.1);
+            opacity: 0.8;
+        }
+    }
 </style>
 @stop
 
@@ -636,10 +773,77 @@ $(document).ready(function() {
         synth.onvoiceschanged = loadVoices;
     }
     
-    // Function to speak race number
-    function speakRaceNumber(raceNo) {
+    // Speech control variables
+    let currentUtterance = null;
+    let isPaused = false;
+    
+    // Function to show speech toast
+    function showSpeechToast(raceNo) {
+        const toast = $('#speechToast');
+        const raceNoSpan = $('#speechRaceNo');
+        const pauseBtn = $('#speechPauseBtn');
+        const icon = $('.speech-icon');
+        
+        // Set race number
+        raceNoSpan.text(`Race ${raceNo}`);
+        
+        // Reset pause button state
+        isPaused = false;
+        pauseBtn.html('<i class="fas fa-pause"></i> Pause');
+        pauseBtn.removeClass('btn-success').addClass('btn-warning');
+        
+        // Show toast
+        toast.css('display', 'block').removeClass('slide-out');
+        
+        // Add speaking animation to icon
+        icon.addClass('speaking');
+    }
+    
+    // Function to hide speech toast
+    function hideSpeechToast(animate = true) {
+        const toast = $('#speechToast');
+        const icon = $('.speech-icon');
+        
+        // Remove speaking animation
+        icon.removeClass('speaking');
+        
+        if (animate) {
+            // Add slide out animation
+            toast.addClass('slide-out');
+            
+            // Hide after animation completes
+            setTimeout(() => {
+                toast.css('display', 'none').removeClass('slide-out');
+            }, 300);
+        } else {
+            // Immediately hide without animation
+            toast.css('display', 'none').removeClass('slide-out');
+        }
+    }
+    
+    // Function to stop current speech and hide toast
+    function stopCurrentSpeech() {
         // Cancel any ongoing speech
         synth.cancel();
+        
+        // Clear current utterance to prevent event handlers from firing
+        if (currentUtterance) {
+            currentUtterance.onend = null;
+            currentUtterance.onerror = null;
+            currentUtterance = null;
+        }
+        
+        // Reset pause state
+        isPaused = false;
+        
+        // Hide toast immediately without animation
+        hideSpeechToast(false);
+    }
+    
+    // Function to speak race number
+    function speakRaceNumber(raceNo) {
+        // Stop any ongoing speech completely
+        stopCurrentSpeech();
         
         // Create utterance in Indonesian
         // let text = `Reis ke ${raceNo}`;
@@ -652,24 +856,68 @@ $(document).ready(function() {
             text = `Race ${raceNo}`;
         }
         
-        const utterance = new SpeechSynthesisUtterance(text);
+        currentUtterance = new SpeechSynthesisUtterance(text);
         
         // Set language to Indonesian if voice is available
         if (indonesianVoice) {
-            utterance.lang = 'id-ID';
-            utterance.voice = indonesianVoice;
+            currentUtterance.lang = 'id-ID';
+            currentUtterance.voice = indonesianVoice;
         } else {
-            utterance.lang = 'en-US';
+            currentUtterance.lang = 'en-US';
         }
         
         // Configure voice settings to sound more masculine
-        utterance.rate = 1.1;  // Slightly slower (0.1 to 10)
-        utterance.pitch = 1.0;  // Lower pitch to sound more masculine (0 to 2)
-        utterance.volume = 1.0; // Max volume (0 to 1)
+        currentUtterance.rate = 1.1;  // Slightly slower (0.1 to 10)
+        currentUtterance.pitch = 1.0;  // Lower pitch to sound more masculine (0 to 2)
+        currentUtterance.volume = 1.0; // Max volume (0 to 1)
         
-        // Speak
-        synth.speak(utterance);
+        // Add event handlers
+        currentUtterance.onend = function() {
+            // Only hide toast if this is still the current utterance
+            if (currentUtterance) {
+                hideSpeechToast();
+                currentUtterance = null;
+                isPaused = false;
+            }
+        };
+        
+        currentUtterance.onerror = function() {
+            // Only hide toast if this is still the current utterance
+            if (currentUtterance) {
+                hideSpeechToast();
+                currentUtterance = null;
+                isPaused = false;
+            }
+        };
+        
+        // Show toast and speak
+        showSpeechToast(raceNo);
+        synth.speak(currentUtterance);
     }
+    
+    // Handle pause/resume button
+    $('#speechPauseBtn').on('click', function() {
+        const btn = $(this);
+        
+        if (isPaused) {
+            // Resume speech
+            synth.resume();
+            isPaused = false;
+            btn.html('<i class="fas fa-pause"></i> Pause');
+            btn.removeClass('btn-success').addClass('btn-warning');
+        } else {
+            // Pause speech
+            synth.pause();
+            isPaused = true;
+            btn.html('<i class="fas fa-play"></i> Resume');
+            btn.removeClass('btn-warning').addClass('btn-success');
+        }
+    });
+    
+    // Handle stop button
+    $('#speechStopBtn').on('click', function() {
+        stopCurrentSpeech();
+    });
     
     // Handle race called checkbox
     $('.race-called-checkbox').on('change', function() {
@@ -708,6 +956,11 @@ $(document).ready(function() {
                 alert('Failed to update race status. Please try again.');
             }
         });
+    });
+
+    // Hide speech toast if page is unloaded
+    $(window).on('beforeunload', function() {
+        synth.cancel();
     });
 
     // Handle Add Race Form Submission
