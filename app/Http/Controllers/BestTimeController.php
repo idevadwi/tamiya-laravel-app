@@ -104,6 +104,7 @@ class BestTimeController extends Controller
             'timer' => 'required|string|regex:/^\d{1,2}:\d{2}$/', // Format: MM:SS or M:SS
             'scope' => 'required|in:OVERALL,SESSION',
             'session_number' => 'nullable|integer|min:1',
+            'redirect_to' => 'nullable|string', // Optional redirect parameter
         ]);
 
         // Verify team belongs to tournament
@@ -181,7 +182,9 @@ class BestTimeController extends Controller
         // Publish to Ably
         $this->publishTrackUpdate($tournament, $validated['track']);
 
-        return redirect()->route('tournament.best_times.index')
+        // Redirect based on where the form was submitted from
+        $redirectRoute = $validated['redirect_to'] ?? 'tournament.best_times.index';
+        return redirect()->route($redirectRoute)
             ->with('success', 'Best time recorded successfully.');
     }
 

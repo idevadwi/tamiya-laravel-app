@@ -128,6 +128,9 @@ Route::middleware(['auth', 'role.web:ADMINISTRATOR,MODERATOR', 'tournament.conte
     // Best Times management
     Route::resource('best_times', \App\Http\Controllers\BestTimeController::class);
 
+    // Track management
+    Route::get('/tracks', [\App\Http\Controllers\TrackController::class, 'index'])->name('tracks.index');
+
     // Tournament Results management
     Route::get('/tournament-results', [\App\Http\Controllers\TournamentResultController::class, 'index'])->name('tournament_results.index');
     Route::post('/tournament-results', [\App\Http\Controllers\TournamentResultController::class, 'store'])->name('tournament_results.store');

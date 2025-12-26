@@ -406,6 +406,13 @@ return [
             'active' => ['tournament/best_times*'],
         ],
         [
+            'text' => 'Tracks',
+            'route' => 'tournament.tracks.index',
+            'icon' => 'fas fa-fw fa-road',
+            'can' => 'accessTournament',
+            'active' => ['tournament/tracks*'],
+        ],
+        [
             'text' => 'Tournament Results',
             'route' => 'tournament.tournament_results.index',
             'icon' => 'fas fa-fw fa-crown',
