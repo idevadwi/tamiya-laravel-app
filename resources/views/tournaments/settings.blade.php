@@ -41,6 +41,27 @@
                             @enderror
                         </div>
                     </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="slug">Tournament Slug (URL) <span class="text-danger">*</span></label>
+                            <input type="text" 
+                                   class="form-control @error('slug') is-invalid @enderror" 
+                                   id="slug" 
+                                   name="slug" 
+                                   value="{{ old('slug', $tournament->slug) }}" 
+                                   placeholder="e.g. marressh"
+                                   required>
+                            <small class="form-text text-muted">The unique URL identifier for this tournament (e.g. {{ url('/') }}/<strong>slug</strong>/summary)</small>
+                            @error('slug')
+                                <span class="invalid-feedback" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
+                            @enderror
+                        </div>
+                    </div>
                     <div class="col-md-6">
                         <div class="form-group">
                             <label for="vendor_name">Vendor Name</label>

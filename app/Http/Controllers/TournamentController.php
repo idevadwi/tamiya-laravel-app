@@ -3,7 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Tournament;
+use App\Models\Race;
+use App\Helpers\AblyHelper;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class TournamentController extends Controller
@@ -26,7 +29,7 @@ class TournamentController extends Controller
         $tournamentsQuery = Tournament::latest();
 
         // Moderators should only see tournaments assigned to them (unless also admin)
-        $isModeratorOnly = $user && $user->hasRole('MODERATOR') && ! $user->hasRole('ADMINISTRATOR');
+        $isModeratorOnly = $user && $user->hasRole('MODERATOR') && !$user->hasRole('ADMINISTRATOR');
         if ($isModeratorOnly) {
             $tournamentsQuery->whereHas('moderators', function ($query) use ($user) {
                 $query->where('tournament_moderators.user_id', $user->id);
@@ -50,12 +53,12 @@ class TournamentController extends Controller
         $user = auth()->user();
 
         // Moderators can only select tournaments assigned to them
-        $isModeratorOnly = $user && $user->hasRole('MODERATOR') && ! $user->hasRole('ADMINISTRATOR');
-        if ($isModeratorOnly && ! $tournament->moderators()->where('user_id', $user->id)->exists()) {
+        $isModeratorOnly = $user && $user->hasRole('MODERATOR') && !$user->hasRole('ADMINISTRATOR');
+        if ($isModeratorOnly && !$tournament->moderators()->where('user_id', $user->id)->exists()) {
             return redirect()->route('home')
                 ->with('error', 'You are not assigned to this tournament.');
         }
-        
+
         if (setActiveTournament($tournament)) {
             return redirect()->route('dashboard')
                 ->with('success', "Tournament '{$tournament->tournament_name}' is now active.");
@@ -80,6 +83,7 @@ class TournamentController extends Controller
     {
         $validated = $request->validate([
             'tournament_name' => 'required|string|max:255',
+            'slug' => 'nullable|string|max:255|unique:tournaments,slug',
             'vendor_name' => 'nullable|string|max:255',
             'current_stage' => 'nullable|integer|min:0',
             'current_bto_session' => 'nullable|integer|min:0',
@@ -96,6 +100,7 @@ class TournamentController extends Controller
         $tournament = Tournament::create([
             'id' => Str::uuid(),
             'tournament_name' => $validated['tournament_name'],
+            'slug' => $validated['slug'] ?? Str::slug($validated['tournament_name']),
             'vendor_name' => $validated['vendor_name'] ?? null,
             'current_stage' => $validated['current_stage'] ?? 0,
             'current_bto_session' => $validated['current_bto_session'] ?? 0,
@@ -137,6 +142,7 @@ class TournamentController extends Controller
     {
         $validated = $request->validate([
             'tournament_name' => 'required|string|max:255',
+            'slug' => 'required|string|max:255|unique:tournaments,slug,' . $tournament->id,
             'vendor_name' => 'nullable|string|max:255',
             'current_stage' => 'nullable|integer|min:0',
             'current_bto_session' => 'nullable|integer|min:0',
@@ -157,7 +163,7 @@ class TournamentController extends Controller
                 'updated_by' => auth()->id()
             ]
         );
-        
+
         $tournament->update($updateData);
 
         return redirect()->route('tournaments.index')
@@ -190,6 +196,7 @@ class TournamentController extends Controller
     {
         $validated = $request->validate([
             'tournament_name' => 'required|string|max:255',
+            'slug' => 'required|string|max:255|unique:tournaments,slug,' . $tournament->id,
             'vendor_name' => 'nullable|string|max:255',
             'current_stage' => 'nullable|integer|min:0',
             'current_bto_session' => 'nullable|integer|min:0',
@@ -210,7 +217,7 @@ class TournamentController extends Controller
                 'updated_by' => auth()->id()
             ]
         );
-        
+
         $tournament->update($updateData);
 
         return redirect()->route('tournaments.settings', $tournament->id)
@@ -236,6 +243,9 @@ class TournamentController extends Controller
         // Refresh the active tournament in session to reflect the new stage
         setActiveTournament($tournament);
 
+        // Publish best race update for new stage
+        $this->publishBestRaceUpdate($tournament);
+
         return redirect()->route('dashboard')
             ->with('success', "Moved to stage {$tournament->current_stage}.");
     }
@@ -246,10 +256,10 @@ class TournamentController extends Controller
     public function moderators(Tournament $tournament)
     {
         $tournament->load('moderators.roles');
-        $allModerators = \App\Models\User::whereHas('roles', function($query) {
+        $allModerators = \App\Models\User::whereHas('roles', function ($query) {
             $query->where('role_name', 'MODERATOR');
         })->get();
-        
+
         return view('tournaments.moderators', compact('tournament', 'allModerators'));
     }
 
@@ -263,7 +273,7 @@ class TournamentController extends Controller
         ]);
 
         $user = \App\Models\User::findOrFail($request->user_id);
-        
+
         // Check if user is a moderator
         if (!$user->roles()->where('role_name', 'MODERATOR')->exists()) {
             return redirect()->route('tournaments.moderators', $tournament->id)
@@ -300,6 +310,34 @@ class TournamentController extends Controller
 
         return redirect()->route('tournaments.moderators', $tournament->id)
             ->with('success', 'Moderator removed successfully.');
+    }
+
+    /**
+     * Publish best race update to Ably
+     */
+    private function publishBestRaceUpdate($tournament)
+    {
+        $nextStage = $tournament->current_stage + 1;
+        
+        // Top 6 Teams with most races in next stage
+        $topTeams = Race::where('tournament_id', $tournament->id)
+            ->where('stage', $nextStage)
+            ->join('teams', 'races.team_id', '=', 'teams.id')
+            ->select('teams.team_name', DB::raw('count(*) as total'))
+            ->groupBy('teams.id', 'teams.team_name')
+            ->orderByDesc('total')
+            ->limit(6)
+            ->get()
+            ->map(function ($race) {
+                return [
+                    'TEAM NAME' => $race->team_name,
+                    'TOTAL' => $race->total
+                ];
+            })
+            ->toArray();
+        
+        // Publish to Ably
+        AblyHelper::publishBestRace($tournament, $topTeams);
     }
 }
 

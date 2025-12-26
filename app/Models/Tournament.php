@@ -13,6 +13,7 @@ class Tournament extends Model
     protected $keyType = 'string';
     protected $fillable = [
         'tournament_name',
+        'slug',
         'vendor_name',
         'current_stage',
         'current_bto_session',
@@ -27,6 +28,20 @@ class Tournament extends Model
         'created_by',
         'updated_by'
     ];
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($model) {
+            if (empty($model->id)) {
+                $model->id = (string) \Illuminate\Support\Str::uuid();
+            }
+            if (empty($model->slug)) {
+                $model->slug = \Illuminate\Support\Str::slug($model->tournament_name);
+            }
+        });
+    }
 
     public function tokens()
     {
@@ -70,14 +85,5 @@ class Tournament extends Model
         return $this->hasMany(TournamentRacerParticipant::class);
     }
 
-    protected static function boot()
-    {
-        parent::boot();
 
-        static::creating(function ($model) {
-            if (empty($model->id)) {
-                $model->id = (string) \Illuminate\Support\Str::uuid();
-            }
-        });
-    }
 }

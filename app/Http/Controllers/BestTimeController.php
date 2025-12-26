@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\BestTime;
 use App\Models\Team;
 use App\Models\TournamentParticipant;
+use App\Helpers\AblyHelper;
 use Illuminate\Http\Request;
 
 class BestTimeController extends Controller
@@ -177,6 +178,9 @@ class BestTimeController extends Controller
             $this->updateOverallIfBetter($tournament->id, $validated['team_id'], $validated['track'], $validated['timer']);
         }
 
+        // Publish to Ably
+        $this->publishTrackUpdate($tournament, $validated['track']);
+
         return redirect()->route('tournament.best_times.index')
             ->with('success', 'Best time recorded successfully.');
     }
@@ -314,6 +318,9 @@ class BestTimeController extends Controller
             $this->updateOverallIfBetter($tournament->id, $validated['team_id'], $validated['track'], $validated['timer']);
         }
 
+        // Publish to Ably
+        $this->publishTrackUpdate($tournament, $validated['track']);
+
         return redirect()->route('tournament.best_times.index')
             ->with('success', 'Best time updated successfully.');
     }
@@ -347,9 +354,8 @@ class BestTimeController extends Controller
      */
     private function updateOverallIfBetter($tournamentId, $teamId, $track, $newTimer)
     {
-        // Get current OVERALL record for this team and track
+        // Get current OVERALL record for this tournament and track (not team-specific)
         $overallRecord = BestTime::where('tournament_id', $tournamentId)
-            ->where('team_id', $teamId)
             ->where('track', $track)
             ->where('scope', 'OVERALL')
             ->first();
@@ -364,6 +370,7 @@ class BestTimeController extends Controller
             if ($newTimeInSeconds < $currentTimeInSeconds) {
                 $overallRecord->update([
                     'timer' => $newTimer,
+                    'team_id' => $teamId, // Update team_id to the team that achieved the better time
                     'updated_by' => auth()->id(),
                 ]);
             }
@@ -391,6 +398,55 @@ class BestTimeController extends Controller
         $milliseconds = (int) $parts[1];
 
         return ($seconds * 100) + $milliseconds; // Convert to centiseconds for comparison
+    }
+
+    /**
+     * Publish track update to Ably
+     */
+    private function publishTrackUpdate($tournament, $trackNumber)
+    {
+        // Get BTO data - best overall time for this track
+        $bto = BestTime::where('tournament_id', $tournament->id)
+            ->where('scope', 'OVERALL')
+            ->where('track', $trackNumber)
+            ->orderBy('timer', 'asc') // Get the best (lowest) time
+            ->with('team')
+            ->first();
+        
+        $btoData = null;
+        if ($bto) {
+            $btoSeconds = AblyHelper::timerToCentiseconds($bto->timer);
+            $limitSeconds = $btoSeconds + 150; // 1:30
+            $limitTimer = AblyHelper::centisecondsToTimer($limitSeconds);
+            
+            $btoData = [
+                'TIMER' => $bto->timer,
+                'TEAM' => $bto->team->team_name,
+                'LIMIT' => $limitTimer
+            ];
+        }
+        
+        // Get session data - get best time for current bto session
+        $currentSession = $tournament->current_bto_session;
+        $session = BestTime::where('tournament_id', $tournament->id)
+            ->where('scope', 'SESSION')
+            ->where('track', $trackNumber)
+            ->where('session_number', $currentSession)
+            ->orderBy('timer', 'asc') // Get the best (latest input) time for this session
+            ->with('team')
+            ->first();
+        
+        $sessionData = null;
+        if ($session) {
+            $sessionData = [
+                'SESI' => $currentSession,
+                'TIMER' => $session->timer,
+                'TEAM' => $session->team->team_name
+            ];
+        }
+        
+        // Publish to Ably
+        AblyHelper::publishTrack($tournament, $trackNumber, $btoData, $sessionData);
     }
 }
 

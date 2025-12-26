@@ -141,3 +141,19 @@ Route::middleware(['auth', 'role.web:ADMINISTRATOR,MODERATOR', 'tournament.conte
 
 
 
+// Public Tournament Summary
+Route::get('/{slug}/summary', [App\Http\Controllers\TournamentSummaryController::class, 'index'])->name('tournament.summary');
+
+// Public Display Routes (no auth required)
+Route::prefix('{slug}')->group(function () {
+    Route::get('/best-race', [App\Http\Controllers\DisplayController::class, 'bestRace'])->name('display.best-race');
+    Route::get('/track-{track}', [App\Http\Controllers\DisplayController::class, 'track'])->name('display.track')
+        ->where('track', '[1-9]');
+});
+
+// API routes for real-time data
+Route::prefix('api/{slug}')->group(function () {
+    Route::get('/best-race/snapshot', [App\Http\Controllers\DisplayController::class, 'bestRaceSnapshot']);
+    Route::get('/track-{track}/snapshot', [App\Http\Controllers\DisplayController::class, 'trackSnapshot'])
+        ->where('track', '[1-9]');
+});

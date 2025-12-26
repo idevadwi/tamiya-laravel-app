@@ -7,7 +7,9 @@ use App\Models\Card;
 use App\Models\Racer;
 use App\Models\Team;
 use App\Models\TournamentParticipant;
+use App\Helpers\AblyHelper;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class RaceController extends Controller
@@ -231,6 +233,9 @@ class RaceController extends Controller
             'created_by' => auth()->id(),
         ]);
 
+        // Publish best race update
+        $this->publishBestRaceUpdate($tournament);
+
         return redirect()->route('tournament.races.index')
             ->with('success', "Race created successfully. Stage: {$stage}, Race No: {$trackAndLane['race_no']}, Track: {$trackAndLane['track']}, Lane: {$trackAndLane['lane']}");
     }
@@ -304,5 +309,33 @@ class RaceController extends Controller
             ->update(['is_called' => $validated['is_called']]);
 
         return response()->json(['success' => true]);
+    }
+
+    /**
+     * Publish best race update to Ably
+     */
+    private function publishBestRaceUpdate($tournament)
+    {
+        $nextStage = $tournament->current_stage + 1;
+        
+        // Top 6 Teams with most races in next stage
+        $topTeams = Race::where('tournament_id', $tournament->id)
+            ->where('stage', $nextStage)
+            ->join('teams', 'races.team_id', '=', 'teams.id')
+            ->select('teams.team_name', DB::raw('count(*) as total'))
+            ->groupBy('teams.id', 'teams.team_name')
+            ->orderByDesc('total')
+            ->limit(6)
+            ->get()
+            ->map(function ($race) {
+                return [
+                    'TEAM NAME' => $race->team_name,
+                    'TOTAL' => $race->total
+                ];
+            })
+            ->toArray();
+        
+        // Publish to Ably
+        AblyHelper::publishBestRace($tournament, $topTeams);
     }
 }
