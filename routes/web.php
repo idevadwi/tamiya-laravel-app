@@ -125,6 +125,7 @@ Route::middleware(['auth', 'role.web:ADMINISTRATOR,MODERATOR', 'tournament.conte
     Route::resource('races', \App\Http\Controllers\RaceController::class);
     Route::post('/races/toggle-called', [\App\Http\Controllers\RaceController::class, 'toggleCalled'])->name('races.toggleCalled');
     Route::post('/races/balance', [\App\Http\Controllers\RaceController::class, 'balanceRaces'])->name('races.balance');
+    Route::post('/races/convert-to-single-track', [\App\Http\Controllers\RaceController::class, 'convertToSingleTrack'])->name('races.convertToSingleTrack');
 
     // Best Times management
     Route::resource('best_times', \App\Http\Controllers\BestTimeController::class);

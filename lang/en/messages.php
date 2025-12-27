@@ -39,6 +39,8 @@ return [
     'proceed_to_next_round' => 'Proceed to Next Round',
     'balance_races' => 'Balance Races',
     'balance' => 'Balance',
+    'convert_to_single_track' => 'Convert to 1 Track',
+    'convert' => 'Convert',
     'select_stage' => 'Select Stage',
     'stage' => 'Stage',
     
@@ -62,6 +64,8 @@ return [
     'proceed_next_round_message' => 'Are you sure you want to move to the next round? This will advance the tournament stage from :current to :next.',
     'balance_races_title' => 'Balance Races',
     'balance_races_message' => 'This will redistribute teams from races with too many lanes to races with too few lanes. Select the stage to balance:',
+    'convert_to_single_track_title' => 'Convert to 1 Track',
+    'convert_to_single_track_message' => 'This will convert all races in the selected stage to use only 1 track (Track 1 with lanes A, B, C). All racers will be redistributed into new races. This action cannot be undone.',
     
     // Common
     'close' => 'Close',

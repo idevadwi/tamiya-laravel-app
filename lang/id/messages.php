@@ -39,6 +39,8 @@ return [
     'proceed_to_next_round' => 'Lanjut ke Babak Berikutnya',
     'balance_races' => 'Seimbangkan Race',
     'balance' => 'Seimbangkan',
+    'convert_to_single_track' => 'Konversi ke 1 Lintasan',
+    'convert' => 'Konversi',
     'select_stage' => 'Pilih Babak',
     'stage' => 'Babak',
     
@@ -61,6 +63,8 @@ return [
     'proceed_next_round_message' => 'Apakah Anda yakin ingin melanjutkan ke ronde berikutnya? Ini akan memajukan tahap turnamen dari :current ke :next.',
     'balance_races_title' => 'Seimbangkan Race',
     'balance_races_message' => 'Ini akan mendistribusikan ulang tim dari race yang terlalu banyak lajur ke race yang terlalu sedikit lajur. Pilih babak untuk diseimbangkan:',
+    'convert_to_single_track_title' => 'Konversi ke 1 Lintasan',
+    'convert_to_single_track_message' => 'Ini akan mengubah semua balapan di babak yang dipilih untuk menggunakan hanya 1 lintasan (Lintasan 1 dengan jalur A, B, C). Semua pembalap akan didistribusikan ulang ke balapan baru. Tindakan ini tidak dapat dibatalkan.',
     
     // Common
     'close' => 'Tutup',

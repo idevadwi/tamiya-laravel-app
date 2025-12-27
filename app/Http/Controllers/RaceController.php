@@ -588,4 +588,133 @@ class RaceController extends Controller
             return response()->json(['error' => 'Failed to balance races: ' . $e->getMessage()], 500);
         }
     }
+
+    /**
+     * Convert all races in a stage to use only 1 track.
+     * 
+     * This will redistribute all racers from multiple tracks into new races
+     * using only Track 1 with lanes A, B, C.
+     */
+    public function convertToSingleTrack(Request $request)
+    {
+        $tournament = getActiveTournament();
+
+        if (!$tournament) {
+            return response()->json(['error' => 'Please select a tournament first.'], 400);
+        }
+
+        $validated = $request->validate([
+            'stage' => 'required|integer|min:1',
+        ]);
+
+        $stage = $validated['stage'];
+
+        DB::beginTransaction();
+        try {
+            // Check if already using 1 track
+            if ($tournament->track_number == 1) {
+                return response()->json(['info' => 'Tournament is already using 1 track.'], 200);
+            }
+
+            // Get all races in the stage, ordered by race_no and lane
+            $races = Race::where('tournament_id', $tournament->id)
+                ->where('stage', $stage)
+                ->orderBy('race_no')
+                ->orderBy('lane')
+                ->get();
+
+            if ($races->isEmpty()) {
+                return response()->json(['error' => 'No races found in stage ' . $stage], 404);
+            }
+
+            // Group races by race_no
+            $racesByRaceNo = [];
+            foreach ($races as $race) {
+                $raceNo = $race->race_no ?? 0;
+                if (!isset($racesByRaceNo[$raceNo])) {
+                    $racesByRaceNo[$raceNo] = [];
+                }
+                $racesByRaceNo[$raceNo][] = $race;
+            }
+
+            // Sort race numbers
+            ksort($racesByRaceNo);
+
+            // Collect all race data to recreate
+            $raceDataToRecreate = [];
+            $totalRacesConverted = 0;
+    
+            // Collect all racers from each original race and redistribute
+            $newRaceNo = 1;
+            $lanes = ['A', 'B', 'C'];
+            $laneIndex = 0;
+
+            foreach ($racesByRaceNo as $originalRaceNo => $raceList) {
+                foreach ($raceList as $race) {
+                    // Store race data for recreation
+                    $raceDataToRecreate[] = [
+                        'id' => $race->id,
+                        'tournament_id' => $race->tournament_id,
+                        'stage' => $race->stage,
+                        'race_no' => $newRaceNo,
+                        'track' => '1',
+                        'lane' => $lanes[$laneIndex],
+                        'racer_id' => $race->racer_id,
+                        'team_id' => $race->team_id,
+                        'card_id' => $race->card_id,
+                        'race_time' => $race->race_time,
+                        'is_called' => $race->is_called,
+                        'created_by' => $race->created_by,
+                        'updated_by' => auth()->id(),
+                    ];
+
+                    $laneIndex++;
+                    if ($laneIndex >= 3) {
+                        $laneIndex = 0;
+                        $newRaceNo++;
+                    }
+                }
+
+                $totalRacesConverted += count($raceList);
+
+                // If we have a partial race (less than 3 racers), move to next race_no
+                if ($laneIndex > 0) {
+                    $newRaceNo++;
+                }
+            }
+
+            // Delete all existing races in the stage to avoid unique constraint violations
+            Race::where('tournament_id', $tournament->id)
+                ->where('stage', $stage)
+                ->delete();
+
+            // Recreate races with new track and lane assignments
+            foreach ($raceDataToRecreate as $data) {
+                Race::create($data);
+            }
+
+            // Update tournament's track_number to 1
+            // $tournament->track_number = 1;
+            // $tournament->save();
+
+            DB::commit();
+
+            \Log::info('Race conversion to single track completed', [
+                'tournament_id' => $tournament->id,
+                'stage' => $stage,
+                'total_races' => $totalRacesConverted,
+                'new_race_count' => $newRaceNo - 1
+            ]);
+
+            return response()->json([
+                'success' => "Successfully converted {$totalRacesConverted} races to 1 track in Stage {$stage}.",
+                'total_races' => $totalRacesConverted,
+                'new_race_count' => $newRaceNo - 1,
+            ], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Race conversion to single track failed: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to convert races: ' . $e->getMessage()], 500);
+        }
+    }
 }

@@ -25,30 +25,15 @@
     $isAdmin = auth()->check() && auth()->user()->hasRole('ADMINISTRATOR');
 @endphp
 @if(session('success'))
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-        {{ session('success') }}
-        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-        </button>
-    </div>
+    <div class="alert-sweetalert" data-type="success" data-message="{{ session('success') }}"></div>
 @endif
 
 @if(session('error'))
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        {{ session('error') }}
-        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-        </button>
-    </div>
+    <div class="alert-sweetalert" data-type="error" data-message="{{ session('error') }}"></div>
 @endif
 
 @if(session('info'))
-    <div class="alert alert-info alert-dismissible fade show" role="alert">
-        {{ session('info') }}
-        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-        </button>
-    </div>
+    <div class="alert-sweetalert" data-type="info" data-message="{{ session('info') }}"></div>
 @endif
 
 <div class="row">
@@ -190,6 +175,10 @@
                 <button type="button" class="btn btn-info btn-block mb-2" data-toggle="modal"
                     data-target="#balanceRacesModal">
                     <i class="fas fa-balance-scale"></i> {{ __('messages.balance_races') }}
+                </button>
+                <button type="button" class="btn btn-dark btn-block mb-2" data-toggle="modal"
+                    data-target="#convertToSingleTrackModal">
+                    <i class="fas fa-compress-arrows-alt"></i> {{ __('messages.convert_to_single_track') }}
                 </button>
                 <a href="{{ route('tournament.best_times.index') }}" class="btn btn-secondary btn-block mb-2">
                     <i class="fas fa-stopwatch"></i> {{ __('messages.manage_best_times') }}
@@ -398,14 +387,79 @@
         </div>
     </div>
 </div>
+
+<!-- Convert to Single Track Modal -->
+<div class="modal fade" id="convertToSingleTrackModal" tabindex="-1" role="dialog" aria-labelledby="convertToSingleTrackLabel"
+    aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="convertToSingleTrackLabel">{{ __('messages.convert_to_single_track_title') }}</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="{{ __('messages.close') }}">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>{{ __('messages.warning') }}:</strong> {{ __('messages.convert_to_single_track_message') }}
+                </div>
+                <form id="convertToSingleTrackForm" action="{{ route('tournament.races.convertToSingleTrack') }}" method="POST">
+                    @csrf
+                    <div class="form-group">
+                        <label for="convertStage">{{ __('messages.stage') }}</label>
+                        <select class="form-control" id="convertStage" name="stage" required>
+                            <option value="">{{ __('messages.select_stage') }}</option>
+                            @for($i = 1; $i <= $activeTournament->current_stage + 1; $i++)
+                                <option value="{{ $i }}">{{ __('messages.stage') }} {{ $i }}</option>
+                            @endfor
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary"
+                    data-dismiss="modal">{{ __('messages.cancel') }}</button>
+                <button type="submit" form="convertToSingleTrackForm" class="btn btn-dark">
+                    <i class="fas fa-compress-arrows-alt"></i> {{ __('messages.convert') }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 @stop
 
 @section('css')
 @stop
 
 @section('js')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     $(document).ready(function() {
+        // Show session alerts using SweetAlert2
+        $('.alert-sweetalert').each(function() {
+            var type = $(this).data('type');
+            var message = $(this).data('message');
+            
+            var swalConfig = {
+                icon: type === 'error' ? 'error' : type,
+                title: type === 'success' ? 'Success' : type === 'error' ? 'Error' : 'Information',
+                text: message,
+                confirmButtonColor: type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#17a2b8',
+                confirmButtonText: 'OK'
+            };
+            
+            if (type === 'success') {
+                Swal.fire(swalConfig).then(function() {
+                    $(this).remove();
+                });
+            } else if (type === 'error') {
+                Swal.fire(swalConfig);
+            } else if (type === 'info') {
+                Swal.fire(swalConfig);
+            }
+        });
+
         // Handle balance races form submission
         $('#balanceRacesForm').on('submit', function(e) {
             e.preventDefault();
@@ -429,18 +483,23 @@
                     if (response.success) {
                         var message = response.success;
                         
-                        // Add details if available
-                        if (response.details && response.details.length > 0) {
-                            message += '\n\nMoves made:';
-                            response.details.forEach(function(move) {
-                                message += '\n- ' + move.team + ': ' + move.from + ' → ' + move.to;
-                            });
-                        }
-                        
-                        alert(message);
-                        location.reload();
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success!',
+                            html: message + detailsHtml,
+                            confirmButtonColor: '#28a745',
+                            confirmButtonText: 'OK'
+                        }).then(function() {
+                            location.reload();
+                        });
                     } else if (response.info) {
-                        alert(response.info);
+                        Swal.fire({
+                            icon: 'info',
+                            title: 'Information',
+                            text: response.info,
+                            confirmButtonColor: '#17a2b8',
+                            confirmButtonText: 'OK'
+                        });
                         $('#balanceRacesModal').modal('hide');
                     }
                 },
@@ -452,7 +511,89 @@
                     } else if (xhr.responseJSON && xhr.responseJSON.message) {
                         errorMsg = xhr.responseJSON.message;
                     }
-                    alert('Error: ' + errorMsg);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: errorMsg,
+                        confirmButtonColor: '#dc3545',
+                        confirmButtonText: 'OK'
+                    });
+                },
+                complete: function() {
+                    // Reset button
+                    submitBtn.prop('disabled', false).html(originalText);
+                }
+            });
+        });
+
+        // Handle convert to single track form submission
+        $('#convertToSingleTrackForm').on('submit', function(e) {
+            e.preventDefault();
+            
+            var form = $(this);
+            var submitBtn = form.find('button[type="submit"]');
+            var originalText = submitBtn.html();
+            
+            // Show loading state
+            submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Processing...');
+            
+            $.ajax({
+                url: form.attr('action'),
+                method: 'POST',
+                data: form.serialize(),
+                success: function(response) {
+                    // Close modal
+                    $('#convertToSingleTrackModal').modal('hide');
+                    
+                    // Show success message
+                    if (response.success) {
+                        var message = response.success;
+                        var detailsHtml = '';
+                        
+                        // Add details if available
+                        if (response.details && response.details.length > 0) {
+                            detailsHtml = '<div style="text-align: left; margin-top: 15px;"><strong>Conversion details:</strong><ul style="margin: 10px 0 0 20px;">';
+                            response.details.forEach(function(detail) {
+                                detailsHtml += '<li>Race ' + detail.original_race + ' → ' + detail.new_race + ' (' + detail.team + ')</li>';
+                            });
+                            detailsHtml += '</ul></div>';
+                        }
+                        
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success!',
+                            html: message + detailsHtml,
+                            confirmButtonColor: '#28a745',
+                            confirmButtonText: 'OK'
+                        }).then(function() {
+                            location.reload();
+                        });
+                    } else if (response.info) {
+                        Swal.fire({
+                            icon: 'info',
+                            title: 'Information',
+                            text: response.info,
+                            confirmButtonColor: '#17a2b8',
+                            confirmButtonText: 'OK'
+                        });
+                        $('#convertToSingleTrackModal').modal('hide');
+                    }
+                },
+                error: function(xhr) {
+                    // Show error message
+                    var errorMsg = 'An error occurred';
+                    if (xhr.responseJSON && xhr.responseJSON.error) {
+                        errorMsg = xhr.responseJSON.error;
+                    } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMsg = xhr.responseJSON.message;
+                    }
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: errorMsg,
+                        confirmButtonColor: '#dc3545',
+                        confirmButtonText: 'OK'
+                    });
                 },
                 complete: function() {
                     // Reset button
