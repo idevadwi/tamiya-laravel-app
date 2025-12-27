@@ -33,6 +33,24 @@
     </div>
 @endif
 
+@if(session('error'))
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        {{ session('error') }}
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+@endif
+
+@if(session('info'))
+    <div class="alert alert-info alert-dismissible fade show" role="alert">
+        {{ session('info') }}
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+@endif
+
 <div class="row">
     <div class="col-lg-3 col-6">
         <div class="small-box bg-info">
@@ -169,6 +187,10 @@
                 <a href="{{ route('tournament.cards.index') }}" class="btn btn-warning btn-block mb-2">
                     <i class="fas fa-credit-card"></i> {{ __('messages.manage_cards') }}
                 </a>
+                <button type="button" class="btn btn-info btn-block mb-2" data-toggle="modal"
+                    data-target="#balanceRacesModal">
+                    <i class="fas fa-balance-scale"></i> {{ __('messages.balance_races') }}
+                </button>
                 <a href="{{ route('tournament.best_times.index') }}" class="btn btn-secondary btn-block mb-2">
                     <i class="fas fa-stopwatch"></i> {{ __('messages.manage_best_times') }}
                 </a>
@@ -339,10 +361,105 @@
         </div>
     </div>
 </div>
+
+<!-- Balance Races Modal -->
+<div class="modal fade" id="balanceRacesModal" tabindex="-1" role="dialog" aria-labelledby="balanceRacesLabel"
+    aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="balanceRacesLabel">{{ __('messages.balance_races_title') }}</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="{{ __('messages.close') }}">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>{{ __('messages.balance_races_message') }}</p>
+                <form id="balanceRacesForm" action="{{ route('tournament.races.balance') }}" method="POST">
+                    @csrf
+                    <div class="form-group">
+                        <label for="stage">{{ __('messages.stage') }}</label>
+                        <select class="form-control" id="stage" name="stage" required>
+                            <option value="">{{ __('messages.select_stage') }}</option>
+                            @for($i = 1; $i <= $activeTournament->current_stage + 1; $i++)
+                                <option value="{{ $i }}">{{ __('messages.stage') }} {{ $i }}</option>
+                            @endfor
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary"
+                    data-dismiss="modal">{{ __('messages.cancel') }}</button>
+                <button type="submit" form="balanceRacesForm" class="btn btn-info">
+                    <i class="fas fa-balance-scale"></i> {{ __('messages.balance') }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 @stop
 
 @section('css')
 @stop
 
 @section('js')
+<script>
+    $(document).ready(function() {
+        // Handle balance races form submission
+        $('#balanceRacesForm').on('submit', function(e) {
+            e.preventDefault();
+            
+            var form = $(this);
+            var submitBtn = form.find('button[type="submit"]');
+            var originalText = submitBtn.html();
+            
+            // Show loading state
+            submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Processing...');
+            
+            $.ajax({
+                url: form.attr('action'),
+                method: 'POST',
+                data: form.serialize(),
+                success: function(response) {
+                    // Close modal
+                    $('#balanceRacesModal').modal('hide');
+                    
+                    // Show success message
+                    if (response.success) {
+                        var message = response.success;
+                        
+                        // Add details if available
+                        if (response.details && response.details.length > 0) {
+                            message += '\n\nMoves made:';
+                            response.details.forEach(function(move) {
+                                message += '\n- ' + move.team + ': ' + move.from + ' → ' + move.to;
+                            });
+                        }
+                        
+                        alert(message);
+                        location.reload();
+                    } else if (response.info) {
+                        alert(response.info);
+                        $('#balanceRacesModal').modal('hide');
+                    }
+                },
+                error: function(xhr) {
+                    // Show error message
+                    var errorMsg = 'An error occurred';
+                    if (xhr.responseJSON && xhr.responseJSON.error) {
+                        errorMsg = xhr.responseJSON.error;
+                    } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMsg = xhr.responseJSON.message;
+                    }
+                    alert('Error: ' + errorMsg);
+                },
+                complete: function() {
+                    // Reset button
+                    submitBtn.prop('disabled', false).html(originalText);
+                }
+            });
+        });
+    });
+</script>
 @stop

@@ -37,6 +37,11 @@ return [
     'tournament_details' => 'Tournament Details',
     'tournament_settings' => 'Tournament Settings',
     'proceed_to_next_round' => 'Proceed to Next Round',
+    'balance_races' => 'Balance Races',
+    'balance' => 'Balance',
+    'select_stage' => 'Select Stage',
+    'stage' => 'Stage',
+    
     
     // Best Times
     'best_times_overall' => 'Best Times Overall (BTO)',
@@ -55,6 +60,8 @@ return [
     'cancel' => 'Cancel',
     'proceed_next_round_title' => 'Proceed to Next Round',
     'proceed_next_round_message' => 'Are you sure you want to move to the next round? This will advance the tournament stage from :current to :next.',
+    'balance_races_title' => 'Balance Races',
+    'balance_races_message' => 'This will redistribute teams from races with too many lanes to races with too few lanes. Select the stage to balance:',
     
     // Common
     'close' => 'Close',

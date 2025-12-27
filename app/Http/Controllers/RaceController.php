@@ -347,4 +347,245 @@ class RaceController extends Controller
         // Publish to Ably
         AblyHelper::publishBestRace($tournament, $topTeams);
     }
+
+    /**
+     * Balance races by ensuring the last race has at least 2 lanes per track.
+     * Moves teams from the previous race if needed.
+     */
+    public function balanceRaces(Request $request)
+    {
+        $tournament = getActiveTournament();
+
+        if (!$tournament) {
+            return response()->json(['error' => 'Please select a tournament first.'], 400);
+        }
+
+        $validated = $request->validate([
+            'stage' => 'required|integer|min:1',
+        ]);
+
+        $stage = $validated['stage'];
+
+        DB::beginTransaction();
+        try {
+            // Get all races in the stage, ordered by race_no and lane
+            $races = Race::where('tournament_id', $tournament->id)
+                ->where('stage', $stage)
+                ->orderBy('race_no')
+                ->orderBy('lane')
+                ->get();
+
+            if ($races->isEmpty()) {
+                return response()->json(['error' => 'No races found in stage ' . $stage], 404);
+            }
+
+            // Group races by race_no
+            $racesByRaceNo = [];
+            foreach ($races as $race) {
+                $raceNo = $race->race_no ?? 0;
+                if (!isset($racesByRaceNo[$raceNo])) {
+                    $racesByRaceNo[$raceNo] = [];
+                }
+                $racesByRaceNo[$raceNo][] = $race;
+            }
+
+            // Sort race numbers
+            ksort($racesByRaceNo);
+            $raceNumbers = array_keys($racesByRaceNo);
+
+            if (count($raceNumbers) < 2) {
+                return response()->json(['error' => 'At least 2 races are required to balance.'], 400);
+            }
+
+            // Get the last race number
+            $lastRaceNo = end($raceNumbers);
+            $previousRaceNo = prev($raceNumbers);
+
+            \Log::info('Race balancing - Stage ' . $stage . ' - Last race: ' . $lastRaceNo . ', Previous race: ' . $previousRaceNo);
+
+            // Get races for last and previous race
+            $lastRaceRaces = $racesByRaceNo[$lastRaceNo] ?? [];
+            $previousRaceRaces = $racesByRaceNo[$previousRaceNo] ?? [];
+
+            if (empty($lastRaceRaces) || empty($previousRaceRaces)) {
+                return response()->json(['error' => 'Invalid race data.'], 400);
+            }
+
+            // Log current state of last race
+            $lastRaceDetails = [];
+            foreach ($lastRaceRaces as $race) {
+                $lastRaceDetails[] = [
+                    'lane' => $race->lane,
+                    'track' => $race->track,
+                    'team' => $race->team->team_name ?? 'Unknown'
+                ];
+            }
+            \Log::info('Race balancing - Last race (' . $lastRaceNo . ') current state:', $lastRaceDetails);
+
+            // Group last race by track to check which tracks need balancing
+            $lastRaceByTrack = [];
+            foreach ($lastRaceRaces as $race) {
+                $track = (int) $race->track;
+                if (!isset($lastRaceByTrack[$track])) {
+                    $lastRaceByTrack[$track] = [];
+                }
+                $lastRaceByTrack[$track][] = $race;
+            }
+
+            // Check which tracks have only 1 lane (need balancing)
+            $tracksNeedingBalance = [];
+            $tracksWithExtraLanes = [];
+            for ($track = 1; $track <= $tournament->track_number; $track++) {
+                $laneCount = isset($lastRaceByTrack[$track]) ? count($lastRaceByTrack[$track]) : 0;
+                if ($laneCount === 1) {
+                    $tracksNeedingBalance[] = $track;
+                } elseif ($laneCount >= 3) {
+                    $tracksWithExtraLanes[] = $track;
+                }
+            }
+
+            if (empty($tracksNeedingBalance)) {
+                return response()->json(['info' => 'Races are already balanced.'], 200);
+            }
+
+            \Log::info('Race balancing - Tracks needing balance: ' . implode(', ', $tracksNeedingBalance));
+            \Log::info('Race balancing - Tracks with extra lanes: ' . implode(', ', $tracksWithExtraLanes));
+
+            // If we have tracks with extra lanes, balance within the last race
+            // Otherwise, get teams from previous race
+            $usePreviousRace = empty($tracksWithExtraLanes);
+
+            if ($usePreviousRace) {
+                // Check if previous race has enough teams to move
+                if (count($previousRaceRaces) < count($tracksNeedingBalance)) {
+                    return response()->json(['error' => 'Previous race does not have enough teams to balance.'], 400);
+                }
+                \Log::info('Race balancing - Using previous race for balancing');
+            } else {
+                \Log::info('Race balancing - Balancing within last race');
+            }
+
+            // Calculate the last lane based on tournament track_number
+            // track_number = 1: last lane is C (65 + 2 = 67)
+            // track_number = 2: last lane is F (65 + 5 = 70)
+            // track_number = 3: last lane is I (65 + 8 = 73)
+            // track_number = 4: last lane is L (65 + 11 = 76)
+            $lastLaneIndex = ($tournament->track_number * 3) - 1;
+            $lastLaneChar = chr(65 + $lastLaneIndex);
+
+            \Log::info('Race balancing - Tournament track_number: ' . $tournament->track_number);
+
+            // Move teams to balance tracks
+            $moves = 0;
+            $moveDetails = [];
+
+            foreach ($tracksNeedingBalance as $track) {
+                // Calculate lane letters for this track
+                // Track 1: A, B, C
+                // Track 2: D, E, F
+                // Track 3: G, H, I
+                // Track 4: J, K, L
+                $firstLane = chr(65 + ($track - 1) * 3);     // A, D, G, J...
+                $secondLane = chr(65 + ($track - 1) * 3 + 1); // B, E, H, K...
+                $thirdLane = chr(65 + ($track - 1) * 3 + 2);  // C, F, I, L...
+
+                $raceToMove = null;
+                $sourceDescription = '';
+
+                if (!$usePreviousRace && !empty($tracksWithExtraLanes)) {
+                    // Get a team from a track with extra lanes (3 lanes)
+                    $sourceTrack = $tracksWithExtraLanes[0];
+                    $sourceThirdLane = chr(65 + ($sourceTrack - 1) * 3 + 2); // C, F, I, L...
+                    
+                    // Find the race in the third lane of the source track
+                    foreach ($lastRaceByTrack[$sourceTrack] as $race) {
+                        if ($race->lane === $sourceThirdLane) {
+                            $raceToMove = $race;
+                            $sourceDescription = 'Race ' . $lastRaceNo . ' Track ' . $sourceTrack . ' Lane ' . $sourceThirdLane;
+                            break;
+                        }
+                    }
+
+                    // Remove this track from tracksWithExtraLanes since we're using one lane
+                    if (count($lastRaceByTrack[$sourceTrack]) <= 2) {
+                        array_shift($tracksWithExtraLanes);
+                    }
+                } else {
+                    // Get the last team from the previous race (highest lane)
+                    if (empty($previousRaceRaces)) {
+                        break;
+                    }
+
+                    // Sort previous race by lane to get the highest lane
+                    usort($previousRaceRaces, function($a, $b) {
+                        return strcmp($b->lane, $a->lane);
+                    });
+
+                    $raceToMove = array_shift($previousRaceRaces);
+                    $sourceDescription = 'Race ' . $previousRaceNo . ' Lane ' . $raceToMove->lane;
+                }
+
+                if (!$raceToMove) {
+                    break;
+                }
+
+                // Find the existing team in the last race that's in the first lane of this track
+                $existingTeamRace = null;
+                foreach ($lastRaceRaces as $race) {
+                    if ((int) $race->track === $track && $race->lane === $firstLane) {
+                        $existingTeamRace = $race;
+                        break;
+                    }
+                }
+
+                // Log move details
+                if ($existingTeamRace) {
+                    $moveDetails[] = [
+                        'move_type' => 'swap',
+                        'track' => $track,
+                        'from' => $sourceDescription . ' (' . ($raceToMove->team->team_name ?? 'Unknown') . ')',
+                        'to' => 'Race ' . $lastRaceNo . ' Track ' . $track . ' Lane ' . $firstLane,
+                        'existing_team_move' => 'Race ' . $lastRaceNo . ' Track ' . $track . ' Lane ' . $firstLane . ' (' . ($existingTeamRace->team->team_name ?? 'Unknown') . ') to Lane ' . $secondLane
+                    ];
+                } else {
+                    $moveDetails[] = [
+                        'move_type' => 'move',
+                        'track' => $track,
+                        'from' => $sourceDescription,
+                        'to' => 'Race ' . $lastRaceNo . ' Track ' . $track . ' Lane ' . $firstLane,
+                        'team' => $raceToMove->team->team_name ?? 'Unknown'
+                    ];
+                }
+
+                // IMPORTANT: Move the existing team in the last race FIRST to the second lane (B, E, H, K...)
+                // This frees up the first lane (A, D, G, J...) and avoids duplicate key constraint
+                if ($existingTeamRace) {
+                    $existingTeamRace->lane = $secondLane;
+                    $existingTeamRace->save();
+                }
+
+                // Then move the team to the last race's first lane of this track
+                $raceToMove->race_no = $lastRaceNo;
+                $raceToMove->lane = $firstLane;
+                $raceToMove->track = (string) $track;
+                $raceToMove->save();
+
+                $moves++;
+            }
+
+            DB::commit();
+
+            \Log::info('Race balancing - Completed. Moves: ' . $moves, $moveDetails);
+
+            return response()->json([
+                'success' => "Races balanced successfully. {$moves} team(s) moved.",
+                'moves' => $moves,
+                'details' => $moveDetails
+            ], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Race balancing failed: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to balance races: ' . $e->getMessage()], 500);
+        }
+    }
 }

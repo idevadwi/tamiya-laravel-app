@@ -37,6 +37,10 @@ return [
     'tournament_details' => 'Detail Turnamen',
     'tournament_settings' => 'Pengaturan Turnamen',
     'proceed_to_next_round' => 'Lanjut ke Babak Berikutnya',
+    'balance_races' => 'Seimbangkan Race',
+    'balance' => 'Seimbangkan',
+    'select_stage' => 'Pilih Babak',
+    'stage' => 'Babak',
     
     // Best Times
     'best_times_overall' => 'Best Times Overall (BTO)',
@@ -55,6 +59,8 @@ return [
     'cancel' => 'Batal',
     'proceed_next_round_title' => 'Lanjut ke Ronde Berikutnya',
     'proceed_next_round_message' => 'Apakah Anda yakin ingin melanjutkan ke ronde berikutnya? Ini akan memajukan tahap turnamen dari :current ke :next.',
+    'balance_races_title' => 'Seimbangkan Race',
+    'balance_races_message' => 'Ini akan mendistribusikan ulang tim dari race yang terlalu banyak lajur ke race yang terlalu sedikit lajur. Pilih babak untuk diseimbangkan:',
     
     // Common
     'close' => 'Tutup',

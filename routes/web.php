@@ -91,7 +91,7 @@ Route::get('/dashboard', function () {
         ->get()
         ->groupBy('track');
 
-    return view('dashboard', compact('totalRacers', 'totalCards', 'raceCount', 'bestTimesOverall', 'currentSession', 'bestTimesSession'));
+    return view('dashboard', compact('totalRacers', 'totalCards', 'raceCount', 'bestTimesOverall', 'currentSession', 'bestTimesSession', 'tournament'));
 })->name('dashboard')->middleware(['auth', 'tournament.context']);
 
 // Admin Master Data Routes (Global Management)
@@ -124,6 +124,7 @@ Route::middleware(['auth', 'role.web:ADMINISTRATOR,MODERATOR', 'tournament.conte
 
     Route::resource('races', \App\Http\Controllers\RaceController::class);
     Route::post('/races/toggle-called', [\App\Http\Controllers\RaceController::class, 'toggleCalled'])->name('races.toggleCalled');
+    Route::post('/races/balance', [\App\Http\Controllers\RaceController::class, 'balanceRaces'])->name('races.balance');
 
     // Best Times management
     Route::resource('best_times', \App\Http\Controllers\BestTimeController::class);
