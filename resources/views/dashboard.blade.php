@@ -166,6 +166,10 @@
                     data-target="#confirmNextStageModal">
                     <i class="fas fa-forward"></i> {{ __('messages.proceed_to_next_round') }}
                 </button>
+                <button type="button" class="btn btn-success btn-block mb-2" data-toggle="modal"
+                    data-target="#confirmNextSessionModal">
+                    <i class="fas fa-step-forward"></i> {{ __('messages.proceed_to_next_session') }}
+                </button>
                 {{-- <a href="{{ route('tournament.racers.index') }}" class="btn btn-success btn-block mb-2">
                     <i class="fas fa-user-friends"></i> {{ __('messages.manage_racers') }}
                 </a> --}}
@@ -184,7 +188,7 @@
                     <i class="fas fa-stopwatch"></i> {{ __('messages.manage_best_times') }}
                 </a> --}}
                 @if($isAdmin)
-                    <a href="{{ route('tournaments.edit', $activeTournament->id) }}" class="btn btn-secondary btn-block">
+                    <a href="{{ route('tournaments.settings', $activeTournament->id) }}" class="btn btn-secondary btn-block">
                         <i class="fas fa-cog"></i> {{ __('messages.tournament_settings') }}
                     </a>
                 @endif
@@ -424,6 +428,35 @@
         </div>
     </div>
 </div>
+
+<!-- Confirm Next Session Modal -->
+<div class="modal fade" id="confirmNextSessionModal" tabindex="-1" role="dialog" aria-labelledby="confirmNextSessionLabel"
+    aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmNextSessionLabel">{{ __('messages.proceed_next_session_title') }}</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="{{ __('messages.close') }}">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                {{ __('messages.proceed_next_session_message', ['current' => $currentSession, 'next' => $currentSession + 1]) }}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary"
+                    data-dismiss="modal">{{ __('messages.cancel') }}</button>
+                <form id="nextSessionForm" action="{{ route('tournament.tournaments.nextSession') }}" method="POST"
+                    class="d-inline">
+                    @csrf
+                    <button type="submit" class="btn btn-success">
+                        {{ __('messages.confirm') }}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 @stop
 
 @section('css')
@@ -574,6 +607,61 @@
                             confirmButtonText: 'OK'
                         });
                         $('#convertToSingleTrackModal').modal('hide');
+                    }
+                },
+                error: function(xhr) {
+                    // Show error message
+                    var errorMsg = 'An error occurred';
+                    if (xhr.responseJSON && xhr.responseJSON.error) {
+                        errorMsg = xhr.responseJSON.error;
+                    } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMsg = xhr.responseJSON.message;
+                    }
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: errorMsg,
+                        confirmButtonColor: '#dc3545',
+                        confirmButtonText: 'OK'
+                    });
+                },
+                complete: function() {
+                    // Reset button
+                    submitBtn.prop('disabled', false).html(originalText);
+                }
+            });
+        });
+
+        // Handle next session form submission
+        $('#nextSessionForm').on('submit', function(e) {
+            e.preventDefault();
+            
+            var form = $(this);
+            var submitBtn = form.find('button[type="submit"]');
+            var originalText = submitBtn.html();
+            
+            // Show loading state
+            submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Processing...');
+            
+            $.ajax({
+                url: form.attr('action'),
+                method: 'POST',
+                data: form.serialize(),
+                success: function(response) {
+                    // Close modal
+                    $('#confirmNextSessionModal').modal('hide');
+                    
+                    // Show success message
+                    if (response.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success!',
+                            text: response.success,
+                            confirmButtonColor: '#28a745',
+                            confirmButtonText: 'OK'
+                        }).then(function() {
+                            location.reload();
+                        });
                     }
                 },
                 error: function(xhr) {

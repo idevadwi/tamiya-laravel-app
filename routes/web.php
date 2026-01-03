@@ -142,6 +142,9 @@ Route::middleware(['auth', 'role.web:ADMINISTRATOR,MODERATOR', 'tournament.conte
     // Proceed to next stage
     Route::post('/tournaments/next-stage', [TournamentController::class, 'nextStage'])->name('tournaments.nextStage');
 
+    // Proceed to next session
+    Route::post('/tournaments/next-session', [TournamentController::class, 'nextSession'])->name('tournaments.nextSession');
+
 });
 
 

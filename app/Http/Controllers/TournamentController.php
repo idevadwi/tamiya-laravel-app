@@ -260,6 +260,30 @@ class TournamentController extends Controller
     }
 
     /**
+     * Increment the current BTO session for the active tournament.
+     */
+    public function nextSession(Request $request)
+    {
+        if (!hasActiveTournament()) {
+            return response()->json(['error' => 'Please select a tournament first.'], 400);
+        }
+
+        $tournament = getActiveTournament();
+
+        $previousSession = $tournament->current_bto_session ?? 0;
+        $tournament->current_bto_session = $previousSession + 1;
+        $tournament->updated_by = auth()->id();
+        $tournament->save();
+
+        // Refresh the active tournament in session to reflect the new session
+        setActiveTournament($tournament);
+
+        return response()->json([
+            'success' => "Successfully moved to session {$tournament->current_bto_session}."
+        ]);
+    }
+
+    /**
      * Show moderators management page for the tournament.
      */
     public function moderators(Tournament $tournament)
