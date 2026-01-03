@@ -111,7 +111,27 @@ class RacerController extends Controller
             ->first();
 
         if (!$participant) {
-            return response()->json(['success' => false, 'message' => 'Racer not found in this tournament'], 404);
+            // Check limits before creating new participant record
+            $activeCount = TournamentRacerParticipant::where('tournament_id', $tournament->id)
+                ->where('team_id', $racer->team_id)
+                ->where('is_active', true)
+                ->count();
+
+            if ($activeCount >= $tournament->max_racer_per_team) {
+                return response()->json(['success' => false, 'message' => "Cannot activate racer. Team limit of {$tournament->max_racer_per_team} reached."], 422);
+            }
+
+            // Create participant record with active status
+            TournamentRacerParticipant::create([
+                'id' => Str::uuid(),
+                'tournament_id' => $tournament->id,
+                'team_id' => $racer->team_id,
+                'racer_id' => $racer->id,
+                'is_active' => true,
+                'created_by' => auth()->id(),
+            ]);
+
+            return response()->json(['success' => true, 'is_active' => true]);
         }
 
         // Check limits if activating

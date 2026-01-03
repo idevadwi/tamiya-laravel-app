@@ -16,7 +16,16 @@ class TournamentController extends Controller
      */
     public function index()
     {
-        $tournaments = Tournament::latest()->paginate(10);
+        $tournaments = Tournament::withCount([
+            'participants as total_teams',
+            'tournamentRacerParticipants as total_racers' => function ($query) {
+                $query->where('is_active', true);
+            },
+            'races as race_count' => function ($query) {
+                $query->whereColumn('races.stage', 'tournaments.current_stage');
+            }
+        ])->latest()->paginate(10);
+        
         return view('tournaments.index', compact('tournaments'));
     }
 

@@ -114,7 +114,7 @@
     </div>
     @if($teams->hasPages())
         <div class="card-footer">
-            {{ $teams->links() }}
+            {{ $teams->links('pagination::bootstrap-4') }}
         </div>
     @endif
 </div>

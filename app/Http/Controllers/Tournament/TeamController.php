@@ -36,7 +36,17 @@ class TeamController extends Controller
         $teams = $query->latest()->paginate(10);
         $teams->appends($request->query());
 
-        return view('tournament.teams.index', compact('teams', 'tournament'));
+        // Get active racer counts for each team in this tournament
+        $activeRacerCounts = [];
+        foreach ($teams as $team) {
+            $activeCount = TournamentRacerParticipant::where('tournament_id', $tournament->id)
+                ->where('team_id', $team->id)
+                ->where('is_active', true)
+                ->count();
+            $activeRacerCounts[$team->id] = $activeCount;
+        }
+
+        return view('tournament.teams.index', compact('teams', 'tournament', 'activeRacerCounts'));
     }
 
     /**

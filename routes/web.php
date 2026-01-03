@@ -57,17 +57,18 @@ Route::get('/dashboard', function () {
     $teamIds = App\Models\TournamentParticipant::where('tournament_id', $tournament->id)
         ->pluck('team_id');
 
-    // Count total racers in those teams
-    $totalRacers = Racer::whereIn('team_id', $teamIds)->count();
+    // Count total racers active in current tournament (using TournamentRacerParticipant with is_active = true)
+    $totalRacers = App\Models\TournamentRacerParticipant::where('tournament_id', $tournament->id)
+        ->where('is_active', true)
+        ->count();
 
-    // Get racer IDs from those teams
-    $racerIds = Racer::whereIn('team_id', $teamIds)->pluck('id');
+    // Get current stage
+    $currentStage = $tournament->current_stage;
 
-    // Count total cards for those racers
-    $totalCards = Card::whereIn('racer_id', $racerIds)->count();
-
-    // Get highest race number for the active tournament
-    $raceCount = Race::where('tournament_id', $tournament->id)->max('race_no') ?? 0;
+    // Get race count by current tournament AND current stage
+    $raceCount = Race::where('tournament_id', $tournament->id)
+        ->where('stage', $currentStage + 1)
+        ->max('race_no') ?? 0;
 
     // Get best times OVERALL for each track
     $bestTimesOverall = \App\Models\BestTime::where('tournament_id', $tournament->id)
@@ -91,7 +92,7 @@ Route::get('/dashboard', function () {
         ->get()
         ->groupBy('track');
 
-    return view('dashboard', compact('totalRacers', 'totalCards', 'raceCount', 'bestTimesOverall', 'currentSession', 'bestTimesSession', 'tournament'));
+    return view('dashboard', compact('totalRacers', 'currentStage', 'raceCount', 'bestTimesOverall', 'currentSession', 'bestTimesSession', 'tournament'));
 })->name('dashboard')->middleware(['auth', 'tournament.context']);
 
 // Admin Master Data Routes (Global Management)

@@ -104,7 +104,7 @@
         </div>
         @if($tournaments->hasPages())
             <div class="card-footer">
-                {{ $tournaments->links() }}
+                {{ $tournaments->links('pagination::bootstrap-4') }}
             </div>
         @endif
     </div>

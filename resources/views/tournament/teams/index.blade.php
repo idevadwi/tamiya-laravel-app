@@ -61,8 +61,8 @@
                 <thead>
                     <tr>
                         <th>Team Name</th>
-                        <th>Number of Racers</th>
-                        <th>Created At</th>
+                        <th>Total Racers</th>
+                        <th>Active Racers</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -73,24 +73,21 @@
                             <td>
                                 <span class="badge badge-info">{{ $team->racers_count }}</span>
                             </td>
-                            <td>{{ $team->created_at->format('Y-m-d H:i') }}</td>
+                            <td>
+                                <span class="badge badge-success">{{ $activeRacerCounts[$team->id] ?? 0 }}</span>
+                            </td>
                             <td>
                                 <div class="btn-group" role="group">
-                                    <a href="{{ route('tournament.teams.show', $team->id) }}" class="btn btn-sm btn-info"
-                                        title="View">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                    <a href="{{ route('tournament.teams.edit', $team->id) }}" class="btn btn-sm btn-warning"
-                                        title="Edit">
-                                        <i class="fas fa-edit"></i>
+                                    <a href="{{ route('tournament.teams.show', $team->id) }}" class="btn btn-sm btn-info">
+                                        <i class="fas fa-eye"></i> Detail
                                     </a>
                                     <form action="{{ route('tournament.teams.destroy', $team->id) }}" method="POST"
-                                        class="d-inline"
+                                        class="d-inline ml-2"
                                         onsubmit="return confirm('Remove this team from the tournament?\n\nNote: The team will not be deleted and can be added to other tournaments.');">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-danger" title="Remove from Tournament">
-                                            <i class="fas fa-times-circle"></i>
+                                        <button type="submit" class="btn btn-sm btn-danger">
+                                            <i class="fas fa-trash"></i> Delete
                                         </button>
                                     </form>
                                 </div>
@@ -110,7 +107,7 @@
     </div>
     @if($teams->hasPages())
         <div class="card-footer">
-            {{ $teams->links() }}
+            {{ $teams->links('pagination::bootstrap-4') }}
         </div>
     @endif
 </div>

@@ -9,9 +9,9 @@
         <p class="text-muted mb-0">Tournament: <strong>{{ $tournament->tournament_name }}</strong></p>
     </div>
     <div>
-        <a href="{{ route('tournament.teams.edit', $team->id) }}" class="btn btn-warning">
-            <i class="fas fa-edit"></i> Edit
-        </a>
+        <button type="button" class="btn btn-warning" data-toggle="modal" data-target="#editTeamModal">
+            <i class="fas fa-edit"></i> Edit Team
+        </button>
         <a href="{{ route('tournament.teams.index') }}" class="btn btn-default">
             <i class="fas fa-arrow-left"></i> Back to Teams
         </a>
@@ -33,43 +33,19 @@
                         <td>{{ $team->team_name }}</td>
                     </tr>
                     <tr>
-                        <th>Number of Racers</th>
+                        <th>Total Racers</th>
                         <td>
                             <span class="badge badge-info">{{ $racers->count() }}</span>
                         </td>
                     </tr>
                     <tr>
-                        <th>Created At</th>
-                        <td>{{ $team->created_at->format('Y-m-d H:i:s') }}</td>
-                    </tr>
-                    <tr>
-                        <th>Updated At</th>
-                        <td>{{ $team->updated_at->format('Y-m-d H:i:s') }}</td>
+                        <th>Active Racers in Tournament</th>
+                        <td>
+                            <span class="badge badge-success">{{ count($activeRacerIds) }} </span> / 
+                            <span class="badge badge-warning"> {{ $tournament->max_racer_per_team ?? 1 }}</span>
+                        </td>
                     </tr>
                 </table>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">Quick Actions</h3>
-            </div>
-            <div class="card-body">
-                <button type="button" class="btn btn-success btn-block mb-2" data-toggle="modal"
-                    data-target="#addRacerModal">
-                    <i class="fas fa-user-plus"></i> Add Racer
-                </button>
-                <a href="{{ route('tournament.teams.edit', $team->id) }}" class="btn btn-warning btn-block mb-2">
-                    <i class="fas fa-edit"></i> Edit Team
-                </a>
-                <form action="{{ route('tournament.teams.destroy', $team->id) }}" method="POST"
-                    onsubmit="return confirm('Remove this team from the tournament?\n\nNote: The team will not be deleted and can be added to other tournaments.');">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" class="btn btn-danger btn-block">
-                        <i class="fas fa-times-circle"></i> Remove from Tournament
-                    </button>
-                </form>
             </div>
         </div>
     </div>
@@ -93,9 +69,9 @@
                                 <tr>
                                     <th>Racer Name</th>
                                     <th>Status</th>
-                                    <th>Image</th>
+                                    {{-- <th>Image</th> --}}
                                     <th>Cards</th>
-                                    <th>Created At</th>
+                                    {{-- <th>Created At</th> --}}
                                     <th style="width: 120px;">Actions</th>
                                 </tr>
                             </thead>
@@ -104,28 +80,29 @@
                                     <tr id="racer-row-{{ $racer->id }}">
                                         <td>{{ $racer->racer_name }}</td>
                                         <td>
-                                            @if(in_array($racer->id, $activeRacerIds))
-                                                <span class="badge badge-success">
+                                            <button type="button" class="btn btn-sm toggle-status-btn {{ in_array($racer->id, $activeRacerIds) ? 'btn-success' : 'btn-secondary' }}"
+                                                data-racer-id="{{ $racer->id }}" data-racer-name="{{ $racer->racer_name }}"
+                                                data-is-active="{{ in_array($racer->id, $activeRacerIds) ? 'true' : 'false' }}"
+                                                title="Click to toggle status">
+                                                @if(in_array($racer->id, $activeRacerIds))
                                                     <i class="fas fa-check-circle"></i> Active
-                                                </span>
-                                            @else
-                                                <span class="badge badge-secondary">
+                                                @else
                                                     <i class="fas fa-times-circle"></i> Inactive
-                                                </span>
-                                            @endif
+                                                @endif
+                                            </button>
                                         </td>
-                                        <td>
+                                        {{-- <td>
                                             @if($racer->image_url)
                                                 <img src="{{ $racer->image_url }}" alt="{{ $racer->racer_name }}"
                                                     class="img-circle img-size-32">
                                             @else
                                                 <span class="text-muted">No image</span>
                                             @endif
-                                        </td>
+                                        </td> --}}
                                         <td>
                                             <span class="badge badge-info">{{ $racer->cards_count }}</span>
                                         </td>
-                                        <td>{{ $racer->created_at->format('Y-m-d H:i') }}</td>
+                                        {{-- <td>{{ $racer->created_at->format('Y-m-d H:i') }}</td> --}}
                                         <td>
                                             <div class="btn-group" role="group">
                                                 <button type="button" class="btn btn-sm btn-warning edit-racer-btn"
@@ -280,30 +257,215 @@
         </div>
     </div>
 </div>
+
+<!-- Edit Team Modal -->
+<div class="modal fade" id="editTeamModal" tabindex="-1" role="dialog" aria-labelledby="editTeamModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editTeamModalLabel">Edit Team</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="editTeamForm">
+                @csrf
+                @method('PUT')
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="edit_team_name">Team Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="edit_team_name" name="team_name"
+                            value="{{ $team->team_name }}" required>
+                        <div class="invalid-feedback"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="updateTeamBtn">
+                        <i class="fas fa-save"></i> Update Team
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 @stop
 
 @section('css')
 @stop
 
 @section('js')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     $(document).ready(function () {
-        // Helper function to show alert
-        function showAlert(message, type) {
-            type = type || 'success';
-            const alertHtml = '<div class="alert alert-' + type + ' alert-dismissible fade show" role="alert" style="position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 300px;">' +
-                message +
-                '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
-                '<span aria-hidden="true">&times;</span>' +
-                '</button>' +
-                '</div>';
-            $('body').append(alertHtml);
-            setTimeout(function () {
-                $('.alert').fadeOut('slow', function () {
-                    $(this).remove();
-                });
-            }, 5000);
-        }
+
+        // Handle edit team form submission
+        $('#editTeamForm').on('submit', function (e) {
+            e.preventDefault();
+
+            const form = $(this);
+            const submitBtn = $('#updateTeamBtn');
+            const originalBtnText = submitBtn.html();
+
+            // Reset validation states
+            form.find('.is-invalid').removeClass('is-invalid');
+            form.find('.invalid-feedback').text('');
+
+            // Disable submit button
+            submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Updating...');
+
+            const formData = {
+                team_name: $('#edit_team_name').val(),
+                _method: 'PUT'
+            };
+
+            $.ajax({
+                url: '{{ route("tournament.teams.update", $team->id) }}',
+                type: 'POST',
+                data: formData,
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function (response) {
+                    // Close modal
+                    $('#editTeamModal').modal('hide');
+
+                    // Show success message and reload
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success',
+                        text: 'Team updated successfully!',
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+
+                    // Reload the page to refresh team info after a short delay
+                    setTimeout(function () {
+                        location.reload();
+                    }, 1000);
+                },
+                error: function (xhr) {
+                    submitBtn.prop('disabled', false).html(originalBtnText);
+
+                    if (xhr.status === 422) {
+                        // Validation errors
+                        const errors = xhr.responseJSON.errors || {};
+                        $.each(errors, function (field, messages) {
+                            const input = form.find('[name="' + field + '"]');
+                            input.addClass('is-invalid');
+                            const feedback = input.siblings('.invalid-feedback');
+                            if (feedback.length) {
+                                feedback.text(messages[0]);
+                            } else {
+                                input.after('<div class="invalid-feedback">' + messages[0] + '</div>');
+                            }
+                        });
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Validation Error',
+                            text: 'Please fix the validation errors.'
+                        });
+                    } else {
+                        const message = xhr.responseJSON?.message || 'An error occurred while updating the team.';
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: message
+                        });
+                    }
+                }
+            });
+        });
+
+        // Reset form when edit modal is closed
+        $('#editTeamModal').on('hidden.bs.modal', function () {
+            const form = $('#editTeamForm');
+            form[0].reset();
+            $('#edit_team_name').val('{{ $team->team_name }}');
+            form.find('.is-invalid').removeClass('is-invalid');
+            form.find('.invalid-feedback').text('');
+            $('#updateTeamBtn').prop('disabled', false).html('<i class="fas fa-save"></i> Update Team');
+        });
+
+        // Handle toggle racer status button
+        $('.toggle-status-btn').on('click', function () {
+            const btn = $(this);
+            const racerId = btn.data('racer-id');
+            const racerName = btn.data('racer-name');
+            const isActive = btn.data('is-active') === true || btn.data('is-active') === 'true';
+            const originalHtml = btn.html();
+
+            // Confirm before toggling
+            const action = isActive ? 'deactivate' : 'activate';
+            Swal.fire({
+                title: 'Confirm',
+                text: `Are you sure you want to ${action} racer "${racerName}"?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, ' + action + ' it!',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Disable button and show loading
+                    btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Loading...');
+
+                    $.ajax({
+                        url: '/tournament/racers/' + racerId + '/toggle-status',
+                        type: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                        },
+                        success: function (response) {
+                            if (response.success) {
+                                // Update button appearance
+                                const newIsActive = response.is_active === true || response.is_active === 'true';
+                                btn.data('is-active', newIsActive ? 'true' : 'false');
+
+                                if (newIsActive) {
+                                    btn.removeClass('btn-secondary').addClass('btn-success');
+                                    btn.html('<i class="fas fa-check-circle"></i> Active');
+                                } else {
+                                    btn.removeClass('btn-success').addClass('btn-secondary');
+                                    btn.html('<i class="fas fa-times-circle"></i> Inactive');
+                                }
+
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Success',
+                                    text: `Racer "${racerName}" ${newIsActive ? 'activated' : 'deactivated'} successfully!`,
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                });
+
+                                // Reload page to update active racer count after a short delay
+                                setTimeout(function () {
+                                    location.reload();
+                                }, 1000);
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error',
+                                    text: response.message || 'An error occurred.'
+                                });
+                                btn.prop('disabled', false).html(originalHtml);
+                            }
+                        },
+                        error: function (xhr) {
+                            const message = xhr.responseJSON?.message || 'An error occurred while toggling racer status.';
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: message
+                            });
+                            btn.prop('disabled', false).html(originalHtml);
+                        }
+                    });
+                }
+            });
+        });
 
         // Handle edit racer button
         $('.edit-racer-btn').on('click', function () {
@@ -341,54 +503,77 @@
 
             let confirmMessage = 'Are you sure you want to delete racer "' + racerName + '"?';
             if (cardCount > 0) {
-                confirmMessage += '\n\nThis will also delete ' + cardCount + ' associated card(s).';
+                confirmMessage += ' This will also delete ' + cardCount + ' associated card(s).';
             }
 
-            if (!confirm(confirmMessage)) {
-                return;
-            }
+            Swal.fire({
+                title: 'Confirm Deletion',
+                text: confirmMessage,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Yes, delete it!',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const deleteBtn = $('.delete-racer-btn[data-racer-id="' + racerId + '"]');
+                    const originalHtml = deleteBtn.html();
 
-            const deleteBtn = $(this);
-            const originalHtml = deleteBtn.html();
+                    // Disable button and show loading
+                    deleteBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
 
-            // Disable button and show loading
-            deleteBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+                    $.ajax({
+                        url: '/tournament/racers/' + racerId,
+                        type: 'DELETE',
+                        headers: {
+                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                        },
+                        success: function (response) {
+                            if (response.success) {
+                                // Remove the row with animation
+                                $('#racer-row-' + racerId).fadeOut(300, function () {
+                                    $(this).remove();
 
-            $.ajax({
-                url: '/tournament/racers/' + racerId,
-                type: 'DELETE',
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                },
-                success: function (response) {
-                    if (response.success) {
-                        // Remove the row with animation
-                        $('#racer-row-' + racerId).fadeOut(300, function () {
-                            $(this).remove();
+                                    // Check if table is empty
+                                    if ($('#racers-list tbody tr').length === 0) {
+                                        $('#racers-list').html(
+                                            '<div class="text-center py-5">' +
+                                            '<p class="text-muted">No racers in this team yet.</p>' +
+                                            '<button type="button" class="btn btn-success" data-toggle="modal" data-target="#addRacerModal">' +
+                                            '<i class="fas fa-user-plus"></i> Add First Racer' +
+                                            '</button>' +
+                                            '</div>'
+                                        );
+                                    }
+                                });
 
-                            // Check if table is empty
-                            if ($('#racers-list tbody tr').length === 0) {
-                                $('#racers-list').html(
-                                    '<div class="text-center py-5">' +
-                                    '<p class="text-muted">No racers in this team yet.</p>' +
-                                    '<button type="button" class="btn btn-success" data-toggle="modal" data-target="#addRacerModal">' +
-                                    '<i class="fas fa-user-plus"></i> Add First Racer' +
-                                    '</button>' +
-                                    '</div>'
-                                );
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Deleted!',
+                                    text: response.message || 'Racer deleted successfully!',
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                });
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error',
+                                    text: response.message || 'An error occurred.'
+                                });
+                                deleteBtn.prop('disabled', false).html(originalHtml);
                             }
-                        });
-
-                        showAlert(response.message || 'Racer deleted successfully!', 'success');
-                    } else {
-                        showAlert(response.message || 'An error occurred.', 'danger');
-                        deleteBtn.prop('disabled', false).html(originalHtml);
-                    }
-                },
-                error: function (xhr) {
-                    const message = xhr.responseJSON?.message || 'An error occurred while deleting the racer.';
-                    showAlert(message, 'danger');
-                    deleteBtn.prop('disabled', false).html(originalHtml);
+                        },
+                        error: function (xhr) {
+                            const message = xhr.responseJSON?.message || 'An error occurred while deleting the racer.';
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: message
+                            });
+                            deleteBtn.prop('disabled', false).html(originalHtml);
+                        }
+                    });
                 }
             });
         });
@@ -441,14 +626,24 @@
                         $('.custom-file-label').html('Choose file');
 
                         // Show success message and reload
-                        showAlert(response.message || 'Racer added successfully!', 'success');
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success',
+                            text: response.message || 'Racer added successfully!',
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
 
                         // Reload the page to refresh racers list after a short delay
                         setTimeout(function () {
                             location.reload();
                         }, 1000);
                     } else {
-                        showAlert(response.message || 'An error occurred.', 'danger');
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: response.message || 'An error occurred.'
+                        });
                         submitBtn.prop('disabled', false).html(originalBtnText);
                     }
                 },
@@ -468,10 +663,18 @@
                                 input.after('<div class="invalid-feedback">' + messages[0] + '</div>');
                             }
                         });
-                        showAlert('Please fix the validation errors.', 'danger');
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Validation Error',
+                            text: 'Please fix the validation errors.'
+                        });
                     } else {
                         const message = xhr.responseJSON?.message || 'An error occurred while adding the racer.';
-                        showAlert(message, 'danger');
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: message
+                        });
                     }
                 }
             });
@@ -522,14 +725,24 @@
                         $('#editRacerModal').modal('hide');
 
                         // Show success message and reload
-                        showAlert(response.message || 'Racer updated successfully!', 'success');
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success',
+                            text: response.message || 'Racer updated successfully!',
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
 
                         // Reload the page to refresh racers list after a short delay
                         setTimeout(function () {
                             location.reload();
                         }, 1000);
                     } else {
-                        showAlert(response.message || 'An error occurred.', 'danger');
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: response.message || 'An error occurred.'
+                        });
                         submitBtn.prop('disabled', false).html(originalBtnText);
                     }
                 },
@@ -547,10 +760,18 @@
                                 feedback.text(messages[0]);
                             }
                         });
-                        showAlert('Please fix the validation errors.', 'danger');
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Validation Error',
+                            text: 'Please fix the validation errors.'
+                        });
                     } else {
                         const message = xhr.responseJSON?.message || 'An error occurred while updating the racer.';
-                        showAlert(message, 'danger');
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: message
+                        });
                     }
                 }
             });

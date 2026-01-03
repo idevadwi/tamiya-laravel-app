@@ -145,7 +145,7 @@
         </div>
         @if($cards->hasPages())
             <div class="card-footer">
-                {{ $cards->links() }}
+                {{ $cards->links('pagination::bootstrap-4') }}
             </div>
         @endif
     </div>

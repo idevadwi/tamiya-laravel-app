@@ -70,14 +70,14 @@
     <div class="col-lg-3 col-6">
         <div class="small-box bg-warning">
             <div class="inner">
-                <h3>{{ $totalCards ?? 0 }}</h3>
-                <p>{{ __('messages.cards') }}</p>
+                <h3>{{ $currentStage ?? 0 }}</h3>
+                <p>{{ __('messages.current_stage') }}</p>
             </div>
             <div class="icon">
-                <i class="fas fa-credit-card"></i>
+                <i class="fas fa-layer-group"></i>
             </div>
-            <a href="{{ route('tournament.cards.index') }}" class="small-box-footer">
-                {{ __('messages.view_cards') }} <i class="fas fa-arrow-circle-right"></i>
+            <a href="{{ route('tournament.races.index') }}" class="small-box-footer">
+                {{ __('messages.view_races') }} <i class="fas fa-arrow-circle-right"></i>
             </a>
         </div>
     </div>
@@ -159,19 +159,19 @@
                 <h3 class="card-title">{{ __('messages.quick_actions') }}</h3>
             </div>
             <div class="card-body">
-                <a href="{{ route('tournament.teams.index') }}" class="btn btn-primary btn-block mb-2">
+                {{-- <a href="{{ route('tournament.teams.index') }}" class="btn btn-primary btn-block mb-2">
                     <i class="fas fa-users"></i> {{ __('messages.manage_teams') }}
-                </a>
+                </a> --}}
                 <button type="button" class="btn btn-danger btn-block mb-2" data-toggle="modal"
                     data-target="#confirmNextStageModal">
                     <i class="fas fa-forward"></i> {{ __('messages.proceed_to_next_round') }}
                 </button>
-                <a href="{{ route('tournament.racers.index') }}" class="btn btn-success btn-block mb-2">
+                {{-- <a href="{{ route('tournament.racers.index') }}" class="btn btn-success btn-block mb-2">
                     <i class="fas fa-user-friends"></i> {{ __('messages.manage_racers') }}
-                </a>
-                <a href="{{ route('tournament.cards.index') }}" class="btn btn-warning btn-block mb-2">
+                </a> --}}
+                {{-- <a href="{{ route('tournament.cards.index') }}" class="btn btn-warning btn-block mb-2">
                     <i class="fas fa-credit-card"></i> {{ __('messages.manage_cards') }}
-                </a>
+                </a> --}}
                 <button type="button" class="btn btn-info btn-block mb-2" data-toggle="modal"
                     data-target="#balanceRacesModal">
                     <i class="fas fa-balance-scale"></i> {{ __('messages.balance_races') }}
@@ -180,13 +180,10 @@
                     data-target="#convertToSingleTrackModal">
                     <i class="fas fa-compress-arrows-alt"></i> {{ __('messages.convert_to_single_track') }}
                 </button>
-                <a href="{{ route('tournament.best_times.index') }}" class="btn btn-secondary btn-block mb-2">
+                {{-- <a href="{{ route('tournament.best_times.index') }}" class="btn btn-secondary btn-block mb-2">
                     <i class="fas fa-stopwatch"></i> {{ __('messages.manage_best_times') }}
-                </a>
+                </a> --}}
                 @if($isAdmin)
-                    <a href="{{ route('tournaments.show', $activeTournament->id) }}" class="btn btn-info btn-block mb-2">
-                        <i class="fas fa-info-circle"></i> {{ __('messages.tournament_details') }}
-                    </a>
                     <a href="{{ route('tournaments.edit', $activeTournament->id) }}" class="btn btn-secondary btn-block">
                         <i class="fas fa-cog"></i> {{ __('messages.tournament_settings') }}
                     </a>

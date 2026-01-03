@@ -399,18 +399,18 @@ return [
             'active' => ['tournament/races*'],
         ],
         [
-            'text' => 'Best Times',
-            'route' => 'tournament.best_times.index',
-            'icon' => 'fas fa-fw fa-stopwatch',
-            'can' => 'accessTournament',
-            'active' => ['tournament/best_times*'],
-        ],
-        [
             'text' => 'Tracks',
             'route' => 'tournament.tracks.index',
             'icon' => 'fas fa-fw fa-road',
             'can' => 'accessTournament',
             'active' => ['tournament/tracks*'],
+        ],
+        [
+            'text' => 'Best Times',
+            'route' => 'tournament.best_times.index',
+            'icon' => 'fas fa-fw fa-stopwatch',
+            'can' => 'accessTournament',
+            'active' => ['tournament/best_times*'],
         ],
         [
             'text' => 'Tournament Results',

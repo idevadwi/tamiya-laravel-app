@@ -143,7 +143,7 @@
     </div>
     @if($racers->hasPages())
         <div class="card-footer">
-            {{ $racers->links() }}
+            {{ $racers->links('pagination::bootstrap-4') }}
         </div>
     @endif
 </div>

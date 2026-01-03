@@ -102,10 +102,7 @@ tamiya_laravel_db
 laravel_user
 StrongPassword123!
 
-TRACK MANAGEMENT
-RACE MANAGEMES
-- AUTO BALANCE
-- CONVERT TO 1 TRACK
+
 
 
 
@@ -114,3 +111,5 @@ RACE MANAGEMES
   $r = Get-Random -Minimum 1 -Maximum 9 
   curl -Method POST "http://127.0.0.1:8000/api/races?tournament_id=a657b55b-7455-4db3-9105-4824569d350a&card_code=$r"
 }
+
+test inactive racer -> card_id
