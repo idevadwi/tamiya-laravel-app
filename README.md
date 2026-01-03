@@ -112,7 +112,7 @@ StrongPassword123!
   curl -Method POST "http://127.0.0.1:8000/api/races?tournament_id=a657b55b-7455-4db3-9105-4824569d350a&card_code=$r"
 }
 
-1..100 | ForEach-Object {
+1..16 | ForEach-Object {
   $r = Get-Random -Minimum 1 -Maximum 9 
   curl -Method POST "http://127.0.0.1:8000/api/races?tournament_slug=asu&card_code=$r"
 }
@@ -120,3 +120,13 @@ StrongPassword123!
 test inactive racer -> card_id
 balance race masih salah
 abc def g -> ab def cg X
+
+1..7 | ForEach-Object {
+  $r = Get-Random -Minimum 1 -Maximum 9 
+  curl -Method POST "http://127.0.0.1:8000/api/races?tournament_slug=marressh&card_code=$r"
+}
+
+1..4 | ForEach-Object {
+  $r = Get-Random -Minimum 1 -Maximum 9 
+  curl -Method POST "http://127.0.0.1:8000/api/races?tournament_slug=marressh&card_code=$r"
+}

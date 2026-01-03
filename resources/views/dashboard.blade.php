@@ -516,7 +516,7 @@
                         Swal.fire({
                             icon: 'success',
                             title: 'Success!',
-                            html: message + detailsHtml,
+                            text: message,
                             confirmButtonColor: '#28a745',
                             confirmButtonText: 'OK'
                         }).then(function() {
