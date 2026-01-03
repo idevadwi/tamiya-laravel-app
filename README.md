@@ -112,4 +112,11 @@ StrongPassword123!
   curl -Method POST "http://127.0.0.1:8000/api/races?tournament_id=a657b55b-7455-4db3-9105-4824569d350a&card_code=$r"
 }
 
+1..100 | ForEach-Object {
+  $r = Get-Random -Minimum 1 -Maximum 9 
+  curl -Method POST "http://127.0.0.1:8000/api/races?tournament_slug=asu&card_code=$r"
+}
+
 test inactive racer -> card_id
+balance race masih salah
+abc def g -> ab def cg X

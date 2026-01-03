@@ -140,7 +140,7 @@
                         <div class="small-box bg-success">
                             <div class="inner">
                                 <h3>{{ $totalRaces }}</h3>
-                                <p>Total Next Races (Stage {{ $currentStage + 1 }})</p>
+                                <p>Total Races (Stage {{ $currentStage + 1 }})</p>
                             </div>
                             <div class="icon">
                                 <i class="fas fa-flag-checkered"></i>
@@ -152,7 +152,7 @@
                         <div class="small-box bg-warning">
                             <div class="inner">
                                 <h3>{{ $currentSession }}</h3>
-                                <p>Current Session</p>
+                                <p>Current BTO Session</p>
                             </div>
                             <div class="icon">
                                 <i class="fas fa-clock"></i>

@@ -17,15 +17,20 @@ class RaceController extends Controller
 {
     /**
      * Store a newly created race.
-     * 
+     *
      * Query parameters:
-     * - tournament_id (required): UUID of the tournament
+     * - tournament_id (optional): UUID of the tournament
+     * - tournament_slug (optional): Slug of the tournament
      * - card_code (required): Card code string
+     *
+     * Note: Either tournament_id OR tournament_slug must be provided
      */
     public function store(Request $request)
     {
+        // Validate that either tournament_id or tournament_slug is provided
         $validator = Validator::make($request->all(), [
-            'tournament_id' => 'required|uuid|exists:tournaments,id',
+            'tournament_id' => 'sometimes|required_without:tournament_slug|uuid|exists:tournaments,id',
+            'tournament_slug' => 'sometimes|required_without:tournament_id|string|exists:tournaments,slug',
             'card_code' => 'required|string|exists:cards,card_code',
         ]);
 
@@ -37,8 +42,12 @@ class RaceController extends Controller
             ], 422);
         }
 
-        // Get tournament
-        $tournament = Tournament::findOrFail($request->tournament_id);
+        // Get tournament by id or slug
+        if ($request->has('tournament_id')) {
+            $tournament = Tournament::findOrFail($request->tournament_id);
+        } else {
+            $tournament = Tournament::where('slug', $request->tournament_slug)->firstOrFail();
+        }
 
         // Get card by card_code and verify it belongs to tournament
         $card = Card::with('racer.team')->where('card_code', $request->card_code)->first();
