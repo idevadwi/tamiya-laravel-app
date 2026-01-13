@@ -1,11 +1,33 @@
-@import 'tailwindcss';
+/* AdminLTE will handle its own CSS */
+/* Add your custom CSS here if needed */
 
-@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
-@source '../../storage/framework/views/*.php';
-@source '../**/*.blade.php';
-@source '../**/*.js';
+/* Fix pagination icon sizes - Bootstrap pagination */
+.pagination .page-link i,
+.pagination .page-link .fa,
+.pagination .page-link .fas,
+.pagination .page-link .far,
+.pagination .page-link .fab,
+.pagination .page-link .fal,
+.pagination .page-link .fad,
+.pagination .page-link svg {
+    font-size: 0.875rem !important;
+    width: 0.875rem !important;
+    height: 0.875rem !important;
+}
 
-@theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+/* Fix for Bootstrap pagination in card-footer - prevent overlap */
+.card-footer .pagination {
+    margin-bottom: 0 !important;
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+}
+
+.card-footer .pagination .page-item {
+    margin: 0.125rem !important;
+}
+
+.card-footer .pagination .page-link {
+    display: block !important;
+    margin-left: 0 !important;
+    border-radius: 0.25rem !important;
 }

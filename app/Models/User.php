@@ -43,4 +43,28 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Tournament::class, 'tournament_moderators');
     }
+
+    /**
+     * Check if user has a specific role
+     */
+    public function hasRole(string $roleName): bool
+    {
+        return $this->roles()->where('role_name', $roleName)->exists();
+    }
+
+    /**
+     * Check if user has any of the given roles
+     */
+    public function hasAnyRole(array $roleNames): bool
+    {
+        return $this->roles()->whereIn('role_name', $roleNames)->exists();
+    }
+
+    /**
+     * Get the user's display name (for AdminLTE and other UI components)
+     */
+    public function getNameAttribute(): string
+    {
+        return $this->email ?? $this->phone ?? 'User';
+    }
 }

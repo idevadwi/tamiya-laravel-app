@@ -12,8 +12,12 @@ class Race extends Model
     public $incrementing = false;
     protected $keyType = 'string';
     protected $fillable = [
-        'tournament_id', 'stage', 'track', 'lane', 'racer_id',
-        'team_id', 'card_id', 'race_time', 'created_by', 'updated_by'
+        'tournament_id', 'stage', 'race_no', 'track', 'lane', 'racer_id',
+        'team_id', 'card_id', 'race_time', 'is_called', 'created_by', 'updated_by'
+    ];
+
+    protected $casts = [
+        'is_called' => 'boolean',
     ];
 
     public function tournament()
@@ -34,5 +38,16 @@ class Race extends Model
     public function card()
     {
         return $this->belongsTo(Card::class);
+    }
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($model) {
+            if (empty($model->id)) {
+                $model->id = (string) \Illuminate\Support\Str::uuid();
+            }
+        });
     }
 }
