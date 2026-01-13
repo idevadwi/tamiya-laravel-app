@@ -89,8 +89,8 @@ return new class extends Migration {
             $table->uuid('id')->primary();
             $table->string('tournament_name');
             $table->string('vendor_name')->nullable();
-            $table->integer('current_stage');
-            $table->integer('current_bto_session');
+            $table->integer('current_stage')->default(1);
+            $table->integer('current_bto_session')->default(1);
             $table->integer('track_number')->default(1);
             $table->integer('bto_number')->default(1);
             $table->integer('bto_session_number')->default(0);
@@ -161,7 +161,7 @@ return new class extends Migration {
             $table->uuid('racer_id');
             $table->uuid('team_id');
             $table->uuid('card_id');
-            $table->string('race_time');
+            $table->string('race_time')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->uuid('created_by')->nullable();
             $table->timestamp('updated_at')->nullable();

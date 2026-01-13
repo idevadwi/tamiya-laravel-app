@@ -1,13 +1,4 @@
-import './bootstrap';
-import { createApp } from 'vue';
+// AdminLTE will handle its own JavaScript
+// Add your custom JavaScript here if needed
 
-// Import your Vue components here
-import Dashboard from './components/Dashboard.vue';
-
-const app = createApp({});
-
-// Register components
-app.component('dashboard', Dashboard);
-
-// Mount the app
-app.mount('#app');
+console.log('AdminLTE app loaded');

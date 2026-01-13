@@ -12,11 +12,36 @@ class Tournament extends Model
     public $incrementing = false;
     protected $keyType = 'string';
     protected $fillable = [
-        'tournament_name', 'vendor_name', 'current_stage', 'current_bto_session',
-        'track_number', 'bto_number', 'bto_session_number', 'max_racer_per_team',
-        'champion_number', 'best_race_enabled', 'best_race_number', 'status',
-        'created_by', 'updated_by'
+        'tournament_name',
+        'slug',
+        'vendor_name',
+        'current_stage',
+        'current_bto_session',
+        'track_number',
+        'bto_number',
+        'bto_session_number',
+        'max_racer_per_team',
+        'champion_number',
+        'best_race_enabled',
+        'best_race_number',
+        'status',
+        'created_by',
+        'updated_by'
     ];
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($model) {
+            if (empty($model->id)) {
+                $model->id = (string) \Illuminate\Support\Str::uuid();
+            }
+            if (empty($model->slug)) {
+                $model->slug = \Illuminate\Support\Str::slug($model->tournament_name);
+            }
+        });
+    }
 
     public function tokens()
     {
@@ -25,7 +50,9 @@ class Tournament extends Model
 
     public function moderators()
     {
-        return $this->belongsToMany(User::class, 'tournament_moderators');
+        return $this->belongsToMany(User::class, 'tournament_moderators', 'tournament_id', 'user_id')
+            ->withPivot('id', 'created_by', 'updated_by')
+            ->withTimestamps();
     }
 
     public function participants()
@@ -53,14 +80,10 @@ class Tournament extends Model
         return $this->hasMany(TournamentResult::class);
     }
 
-    protected static function boot()
+    public function tournamentRacerParticipants()
     {
-        parent::boot();
-
-        static::creating(function ($model) {
-            if (empty($model->id)) {
-                $model->id = (string) \Illuminate\Support\Str::uuid();
-            }
-        });
+        return $this->hasMany(TournamentRacerParticipant::class);
     }
+
+
 }

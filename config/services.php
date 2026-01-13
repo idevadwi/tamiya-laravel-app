@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'ably' => [
+        'key' => env('ABLY_KEY'),
+        'channel_prefix' => env('ABLY_CHANNEL_PREFIX', 'tamiya'),
+    ],
+
 ];

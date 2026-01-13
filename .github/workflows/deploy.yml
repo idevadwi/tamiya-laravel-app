@@ -1,0 +1,49 @@
+name: Deploy Laravel to VPS
+
+on:
+  push:
+    branches:
+      - deva     # <-- your deployment branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}       # must be 'deva'
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          command_timeout: 20m
+          
+          script: |
+            echo "🔄 Changing directory..."
+            cd /var/www/tamiya-laravel-app
+
+            echo "📥 Fetching latest branch..."
+            git fetch origin
+            git reset --hard origin/deva
+
+            echo "📦 Installing Composer dependencies..."
+            composer install --no-interaction --prefer-dist --optimize-autoloader
+
+            echo "🛠 Running migrations..."
+            php artisan migrate --force
+
+            echo "🚀 Optimizing Laravel..."
+            php artisan optimize:clear
+            php artisan optimize
+
+            echo "🔐 Fixing permissions..."
+            sudo chown -R deva:www-data storage bootstrap/cache
+
+            echo "🔁 Reloading Nginx..."
+            sudo systemctl reload nginx
+
+            echo "🎉 Deployment complete!"

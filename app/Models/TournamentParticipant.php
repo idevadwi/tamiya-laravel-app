@@ -22,4 +22,15 @@ class TournamentParticipant extends Model
     {
         return $this->belongsTo(Team::class);
     }
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($model) {
+            if (empty($model->id)) {
+                $model->id = (string) \Illuminate\Support\Str::uuid();
+            }
+        });
+    }
 }
