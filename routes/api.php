@@ -46,3 +46,23 @@ Route::prefix('cards')->group(function () {
 });
 
 Route::apiResource('tournaments', TournamentController::class);
+
+
+// Health check endpoint for Docker
+Route::get('/health', function () {
+    try {
+        // Check database connection
+        DB::connection()->getPdo();
+
+        return response()->json([
+            'status' => 'healthy',
+            'timestamp' => now()->toIso8601String(),
+            'database' => 'connected'
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'unhealthy',
+            'error' => 'Database connection failed'
+        ], 503);
+    }
+});
