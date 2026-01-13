@@ -14,11 +14,11 @@ class UserSeeder extends Seeder
     {
         // Create deva account with ADMINISTRATOR role
         $deva = User::firstOrCreate(
-            ['email' => 'deva@mail.com'],
+            ['email' => 'deva@race-lane.com'],
             [
                 'id' => Str::uuid(),
                 'phone' => '085792440099',
-                'password' => Hash::make('password'),
+                'password' => Hash::make('deva'),
             ]
         );
 
