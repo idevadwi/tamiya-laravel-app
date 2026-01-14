@@ -2,9 +2,7 @@ version: '3.8'
 
 services:
   tamiya-app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: tamiya-laravel-app:latest
     container_name: tamiya-laravel-app
     restart: unless-stopped
 

@@ -147,16 +147,19 @@ sudo chmod -R 775 storage/
 ```bash
 cd ~/apps/tamiya-laravel-app
 
-# Install Composer dependencies
-docker run --rm -v $(pwd):/app -w /app composer:2 install \
+# Install Composer dependencies (use composer:2.8 with --ignore-platform-reqs)
+docker run --rm -v $(pwd):/app -w /app composer:2.8 install \
+  --ignore-platform-reqs \
   --no-interaction \
   --prefer-dist \
   --optimize-autoloader \
   --no-dev
 
-# Build Docker image
+# Build Docker image (this copies vendor/ into the container)
 docker build -t tamiya-laravel-app:latest -f Dockerfile .
 ```
+
+**Note:** We use `composer:2.8` with `--ignore-platform-reqs` to avoid PHP version conflicts. The actual container runs PHP 8.3-fpm-alpine, so there are no compatibility issues.
 
 ---
 

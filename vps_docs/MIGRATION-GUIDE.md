@@ -145,7 +145,8 @@ sudo chmod -R 775 storage/
 cd ~/apps/tamiya-laravel-app
 
 # Install Composer dependencies
-docker run --rm -v $(pwd):/app -w /app composer:2 install \
+docker run --rm -v $(pwd):/app -w /app composer:2.8 install \
+  --ignore-platform-reqs \
   --no-interaction \
   --prefer-dist \
   --optimize-autoloader \

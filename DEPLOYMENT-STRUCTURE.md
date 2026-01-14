@@ -151,7 +151,7 @@ cd ~/apps/tamiya-laravel-app
 git pull origin deva
 
 # Install dependencies
-docker run --rm -v $(pwd):/app -w /app composer:2 install --no-dev
+docker run --rm -v $(pwd):/app -w /app composer:2.8 install --ignore-platform-reqs --no-dev
 
 # Build image
 docker build -t tamiya-laravel-app:latest .
