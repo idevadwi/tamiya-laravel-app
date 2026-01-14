@@ -7,126 +7,249 @@
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
 </p>
 
-## About Laravel
+# Tamiya Laravel Race Management Application
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+A comprehensive race management system for Tamiya mini 4WD competitions with real-time timing, tournament management, and multi-language support.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Features
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- Tournament management with multi-language support (English, Indonesian, Japanese)
+- Real-time race timing with Ably integration
+- Racer registration and management
+- Race results tracking and leaderboards
+- Best times tracking per tournament
+- Role-based access control (Administrator, Moderator, User)
+- Responsive AdminLTE interface
 
-## Learning Laravel
+## Tech Stack
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### Backend
+- **Laravel 11** - PHP framework
+- **PHP 8.3** - Server-side language
+- **MySQL 8.0** - Database
+- **Laravel Sanctum** - API authentication
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
-
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-## Laravel Sponsors
-
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
-
-### Premium Partners
-
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
-
-## Contributing
-
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
-
-
-## Framework
-- laravel/sanctum
-
-## Frontend Stack
-- **Vue 3** - Progressive JavaScript framework for building user interfaces
+### Frontend
+- **Vue 3** - Progressive JavaScript framework
 - **Vite** - Fast build tool and dev server
 - **Tailwind CSS** - Utility-first CSS framework
+- **AdminLTE** - Admin dashboard template
 
-## Development Setup
+### Infrastructure
+- **Docker** - Containerization
+- **Nginx** - Web server
+- **Supervisor** - Process manager
+- **Ably** - Real-time messaging
+
+---
+
+## Local Development Setup
 
 ### Prerequisites
-- PHP 8.1+
+- PHP 8.3+
 - Node.js 18+ (recommended: use Node.js 20+ for best compatibility)
 - Composer
+- MySQL 8.0+
 
 ### Installation
+
 1. Clone the repository
-2. Install PHP dependencies: `composer install`
-3. Install JavaScript dependencies: `npm install`
-4. Copy environment file: `cp .env.example .env`
-5. Generate application key: `php artisan key:generate`
-6. Run migrations: `php artisan migrate`
+   ```bash
+   git clone https://github.com/YOUR_USERNAME/tamiya-laravel-app.git
+   cd tamiya-laravel-app
+   ```
+
+2. Install PHP dependencies
+   ```bash
+   composer install
+   ```
+
+3. Install JavaScript dependencies
+   ```bash
+   npm install
+   ```
+
+4. Copy environment file
+   ```bash
+   cp .env.example .env
+   ```
+
+5. Generate application key
+   ```bash
+   php artisan key:generate
+   ```
+
+6. Configure database in `.env`
+   ```env
+   DB_CONNECTION=mysql
+   DB_HOST=127.0.0.1
+   DB_PORT=3306
+   DB_DATABASE=tamiya_laravel
+   DB_USERNAME=your_username
+   DB_PASSWORD=your_password
+   ```
+
+7. Run migrations and seeders
+   ```bash
+   php artisan migrate --seed
+   ```
+
+8. Create storage symlink
+   ```bash
+   php artisan storage:link
+   ```
 
 ### Development Servers
-- **Start both servers**: `npm run dev:all` (runs Laravel on port 8080 and Vite dev server)
-- **Laravel only**: `php artisan serve --port=8080`
-- **Vite only**: `npm run dev`
+
+Start both Laravel and Vite dev servers:
+```bash
+npm run dev:all
+```
+
+Or start them separately:
+```bash
+# Laravel only (port 8080)
+php artisan serve --port=8080
+
+# Vite only
+npm run dev
+```
 
 ### Vue Components
-Vue components are located in `resources/js/components/`. The application includes:
+
+Vue components are located in `resources/js/components/`:
 - `ExampleComponent.vue` - Basic Vue component example
 - `RaceTimer.vue` - Tamiya race timing component with start/stop/reset functionality
 
 Components are automatically registered in `resources/js/app.js` and can be used in Blade templates.
 
+---
 
-php artisan serve --host=0.0.0.0 --port=8000
-tamiya_laravel_db
-laravel_user
-StrongPassword123!
+## Production Deployment (Docker)
 
+The application is deployed to production using Docker containers with automated CI/CD via GitHub Actions.
 
+### Quick Deploy
 
+Push to the `deva` branch to trigger automated deployment:
+```bash
+git push origin deva
+```
 
+GitHub Actions will automatically:
+1. Build Docker image
+2. Deploy to VPS
+3. Run migrations
+4. Optimize Laravel
 
+### Manual Deployment
 
-1..100 | ForEach-Object {
-  $r = Get-Random -Minimum 1 -Maximum 9 
-  curl -Method POST "http://127.0.0.1:8000/api/races?tournament_id=a657b55b-7455-4db3-9105-4824569d350a&card_code=$r"
+On VPS:
+```bash
+cd ~/apps/tamiya-laravel-app
+git pull origin deva
+docker build -t tamiya-laravel-app:latest .
+docker-compose --env-file .env.production up -d
+docker exec tamiya-laravel-app php artisan migrate --force
+docker exec tamiya-laravel-app php artisan optimize
+```
+
+### Docker Files
+
+- [Dockerfile](Dockerfile) - Container image definition
+- [docker-compose.yml](docker-compose.yml) - Service orchestration
+- [nginx-app.conf](nginx-app.conf) - Nginx web server configuration
+- [supervisord.conf](supervisord.conf) - Process manager configuration
+
+### Documentation
+
+- [Deployment Structure](DEPLOYMENT-STRUCTURE.md) - Complete deployment architecture
+- [Migration Guide](vps_docs/MIGRATION-GUIDE.md) - Migrate from old deployment structure
+- [VPS Setup Guide](vps_docs/07-LARAVEL-DEPLOYMENT.md) - Full VPS deployment walkthrough
+
+### Health Check
+
+The application includes a health check endpoint:
+```bash
+curl http://localhost/api/health
+```
+
+Response:
+```json
+{
+  "status": "healthy",
+  "timestamp": "2026-01-14T10:30:00+00:00",
+  "database": "connected"
 }
+```
 
-1..16 | ForEach-Object {
-  $r = Get-Random -Minimum 1 -Maximum 9 
-  curl -Method POST "http://127.0.0.1:8000/api/races?tournament_slug=asu&card_code=$r"
-}
+---
 
-test inactive racer -> card_id
-balance race masih salah
-abc def g -> ab def cg X
+## Project Structure
 
-1..7 | ForEach-Object {
-  $r = Get-Random -Minimum 1 -Maximum 9 
-  curl -Method POST "http://127.0.0.1:8000/api/races?tournament_slug=marressh&card_code=$r"
-}
+```
+tamiya-laravel-app/
+├── app/                     # Laravel application
+├── bootstrap/
+├── config/
+├── database/
+│   ├── migrations/          # Database schema
+│   └── seeders/             # Database seeds
+├── lang/                    # Translations (en, id, ja)
+├── public/                  # Public assets
+├── resources/
+│   ├── js/                  # Vue components
+│   └── views/               # Blade templates
+├── routes/                  # API and web routes
+├── storage/                 # Logs and uploads
+├── tests/
+├── vps_docs/                # VPS deployment guides
+├── Dockerfile               # Docker image
+├── docker-compose.yml       # Docker orchestration
+├── nginx-app.conf          # Nginx config
+└── supervisord.conf        # Process manager
+```
 
-1..4 | ForEach-Object {
-  $r = Get-Random -Minimum 1 -Maximum 9 
-  curl -Method POST "http://127.0.0.1:8000/api/races?tournament_slug=marressh&card_code=$r"
-}
+---
+
+## API Endpoints
+
+### Races
+- `POST /api/races` - Create new race with card code
+- `GET /api/races/{id}` - Get race details
+- `GET /api/races/best-times/{tournament}` - Get best times
+
+### Tournaments
+- `GET /api/tournaments` - List tournaments
+- `POST /api/tournaments` - Create tournament (auth required)
+- `GET /api/tournaments/{slug}` - Get tournament by slug
+
+---
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+---
+
+## About Laravel
+
+Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects.
+
+Laravel is accessible, powerful, and provides tools required for large, robust applications. Learn more at [laravel.com](https://laravel.com).
+
+---
+
+## License
+
+The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+---
+
+## Support
+
+For deployment issues, see [DEPLOYMENT-STRUCTURE.md](DEPLOYMENT-STRUCTURE.md) or the [vps_docs/](vps_docs/) directory.

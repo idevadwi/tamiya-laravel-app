@@ -1,0 +1,114 @@
+name: Deploy to VPS (Docker)
+
+on:
+  push:
+    branches:
+      - deva
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Deploy to VPS via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        env:
+          APP_KEY: ${{ secrets.APP_KEY }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          ABLY_KEY: ${{ secrets.ABLY_KEY }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          command_timeout: 20m
+          envs: APP_KEY,DB_PASSWORD,ABLY_KEY
+
+          script: |
+            set -e
+
+            echo "======================================"
+            echo "🚀 Starting Docker Deployment"
+            echo "======================================"
+
+            cd ~/apps/tamiya-laravel-app
+
+            echo "📥 Fetching latest code..."
+            git fetch origin
+            git reset --hard origin/deva
+            git clean -fd
+
+            echo "🔐 Updating environment variables..."
+            sed -i "s|APP_KEY=.*|APP_KEY=${APP_KEY}|g" .env.production
+            sed -i "s|DB_PASSWORD=.*|DB_PASSWORD=${DB_PASSWORD}|g" .env.production
+            sed -i "s|ABLY_KEY=.*|ABLY_KEY=${ABLY_KEY}|g" .env.production
+            chmod 600 .env.production
+
+            echo "📦 Installing Composer dependencies..."
+            docker run --rm -v $(pwd):/app -w /app composer:2 install \
+              --no-interaction \
+              --prefer-dist \
+              --optimize-autoloader \
+              --no-dev
+
+            echo "🏗️  Building Docker image..."
+            docker build -t tamiya-laravel-app:latest -f Dockerfile .
+
+            echo "🔄 Performing rolling deployment..."
+            if docker ps -q -f name=tamiya-laravel-app > /dev/null 2>&1; then
+              docker stop tamiya-laravel-app || true
+              docker rm tamiya-laravel-app || true
+            fi
+
+            docker-compose --env-file .env.production up -d tamiya-app
+
+            echo "⏳ Waiting for health check..."
+            for i in {1..30}; do
+              if docker ps --filter "name=tamiya-laravel-app" --filter "health=healthy" | grep -q tamiya-laravel-app; then
+                echo "✅ Container is healthy!"
+                break
+              fi
+              if [ $i -eq 30 ]; then
+                echo "❌ Health check failed"
+                docker logs --tail 50 tamiya-laravel-app
+                exit 1
+              fi
+              echo "Attempt $i/30..."
+              sleep 2
+            done
+
+            echo "⚡ Running Laravel optimizations..."
+            docker exec tamiya-laravel-app php artisan optimize:clear
+            docker exec tamiya-laravel-app php artisan config:cache
+            docker exec tamiya-laravel-app php artisan route:cache
+            docker exec tamiya-laravel-app php artisan view:cache
+
+            echo "🛠️  Running database migrations..."
+            docker exec tamiya-laravel-app php artisan migrate --force
+
+            echo "🔐 Setting permissions..."
+            docker exec tamiya-laravel-app chown -R laravel:laravel /var/www/html/storage /var/www/html/bootstrap/cache
+            docker exec tamiya-laravel-app chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+
+            echo "🧹 Cleaning up..."
+            docker image prune -f --filter "dangling=true"
+
+            echo "✅ Verifying deployment..."
+            docker ps -f name=tamiya-laravel-app
+
+            sleep 3
+            if docker exec tamiya-laravel-app curl -f http://localhost/api/health > /dev/null 2>&1; then
+              echo "✅ Health check passed!"
+            else
+              echo "⚠️  Health check warning"
+            fi
+
+            echo "======================================"
+            echo "🎉 Deployment Complete!"
+            echo "======================================"
+
+            docker logs --tail 20 tamiya-laravel-app
