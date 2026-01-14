@@ -39,7 +39,7 @@ jobs:
 
             echo "📥 Fetching latest code..."
             git fetch origin
-            git reset --hard origin/deva
+            git reset --hard origin/main
             git clean -fd
 
             echo "🔐 Updating environment variables..."
@@ -49,12 +49,14 @@ jobs:
             chmod 600 .env.production
 
             echo "📦 Installing Composer dependencies..."
-            docker run --rm -v $(pwd):/app -w /app composer:2.8 install \
-              --ignore-platform-reqs \
-              --no-interaction \
-              --prefer-dist \
-              --optimize-autoloader \
-              --no-dev
+            docker run --rm -v $(pwd):/app -w /app composer:2.8 sh -c \
+              "git config --global --add safe.directory /app && \
+              composer install \
+                --ignore-platform-reqs \
+                --no-interaction \
+                --prefer-dist \
+                --optimize-autoloader \
+                --no-dev"
 
             echo "🏗️  Building Docker image..."
             docker build -t tamiya-laravel-app:latest -f Dockerfile .
