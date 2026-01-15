@@ -418,8 +418,8 @@
             var scope = $(this).data('scope');
             var session = $(this).data('session');
 
-            // Set form action
-            $('#editBestTimeForm').attr('action', '/best_times/' + id);
+            // Set form action using route
+            $('#editBestTimeForm').attr('action', "{{ route('tournament.best_times.update', ':id') }}".replace(':id', id));
 
             // Populate form fields
             $('#edit_team_id').val(teamId);
