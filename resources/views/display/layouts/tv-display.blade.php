@@ -14,8 +14,8 @@
     {{-- TV optimization --}}
     <meta name="format-detection" content="telephone=no">
     
-    {{-- Ably CDN --}}
-    <script src="https://cdn.ably.io/lib/ably.min-1.js"></script>
+    {{-- Ably Library (Local) --}}
+    <script src="{{ asset('js/ably.min.js') }}"></script>
     
     <style>
         * {
