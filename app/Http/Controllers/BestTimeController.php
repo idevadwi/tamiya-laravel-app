@@ -91,12 +91,21 @@ class BestTimeController extends Controller
      */
     public function store(Request $request)
     {
+        \Log::info('BestTimeController@store - Starting', [
+            'input' => $request->all()
+        ]);
+
         $tournament = getActiveTournament();
 
         if (!$tournament) {
+            \Log::warning('BestTimeController@store - No active tournament');
             return redirect()->route('home')
                 ->with('error', 'Please select a tournament first.');
         }
+
+        \Log::info('BestTimeController@store - Tournament found', [
+            'tournament_id' => $tournament->id
+        ]);
 
         $validated = $request->validate([
             'team_id' => 'required|exists:teams,id',
@@ -107,16 +116,26 @@ class BestTimeController extends Controller
             'redirect_to' => 'nullable|string', // Optional redirect parameter
         ]);
 
+        \Log::info('BestTimeController@store - Validation passed', [
+            'validated' => $validated
+        ]);
+
         // Verify team belongs to tournament
+        \Log::info('BestTimeController@store - Checking team participation');
         $isParticipant = TournamentParticipant::where('tournament_id', $tournament->id)
             ->where('team_id', $validated['team_id'])
             ->exists();
 
         if (!$isParticipant) {
+            \Log::warning('BestTimeController@store - Team not in tournament', [
+                'team_id' => $validated['team_id']
+            ]);
             return redirect()->back()
                 ->with('error', 'Team does not belong to the active tournament.')
                 ->withInput();
         }
+
+        \Log::info('BestTimeController@store - Team is participant');
 
         // For SESSION scope, use current_bto_session if not provided
         if ($validated['scope'] === 'SESSION') {
@@ -126,6 +145,7 @@ class BestTimeController extends Controller
 
         // Validate: Cannot add worse time for OVERALL
         if ($validated['scope'] === 'OVERALL') {
+            \Log::info('BestTimeController@store - Checking OVERALL validation');
             $existingOverall = BestTime::where('tournament_id', $tournament->id)
                 ->where('track', $validated['track'])
                 ->where('scope', 'OVERALL')
@@ -136,6 +156,7 @@ class BestTimeController extends Controller
                 $newTime = $this->timerToSeconds($validated['timer']);
 
                 if ($newTime >= $existingTime) {
+                    \Log::warning('BestTimeController@store - OVERALL time not better');
                     return redirect()->back()
                         ->with('error', "Cannot add OVERALL time. The timer {$validated['timer']} is not better than the existing time {$existingOverall->timer} for this track.")
                         ->withInput();
@@ -145,6 +166,7 @@ class BestTimeController extends Controller
 
         // Validate: Cannot add worse time for SESSION
         if ($validated['scope'] === 'SESSION') {
+            \Log::info('BestTimeController@store - Checking SESSION validation');
             $existingSession = BestTime::where('tournament_id', $tournament->id)
                 ->where('track', $validated['track'])
                 ->where('scope', 'SESSION')
@@ -156,6 +178,7 @@ class BestTimeController extends Controller
                 $newTime = $this->timerToSeconds($validated['timer']);
 
                 if ($newTime >= $existingTime) {
+                    \Log::warning('BestTimeController@store - SESSION time not better');
                     return redirect()->back()
                         ->with('error', "Cannot add SESSION {$validated['session_number']} time. The timer {$validated['timer']} is not better than the existing time {$existingSession->timer} for this track and session.")
                         ->withInput();
@@ -164,24 +187,39 @@ class BestTimeController extends Controller
         }
 
         // Create the best time record
-        $bestTime = BestTime::create([
-            'tournament_id' => $tournament->id,
-            'team_id' => $validated['team_id'],
-            'track' => $validated['track'],
-            'timer' => $validated['timer'],
-            'scope' => $validated['scope'],
-            'session_number' => $validated['scope'] === 'SESSION' ? $validated['session_number'] : null,
-            'created_by' => auth()->id(),
-        ]);
+        \Log::info('BestTimeController@store - Creating best time record');
+        try {
+            $bestTime = BestTime::create([
+                'tournament_id' => $tournament->id,
+                'team_id' => $validated['team_id'],
+                'track' => $validated['track'],
+                'timer' => $validated['timer'],
+                'scope' => $validated['scope'],
+                'session_number' => $validated['scope'] === 'SESSION' ? $validated['session_number'] : null,
+                'created_by' => auth()->id(),
+            ]);
+            \Log::info('BestTimeController@store - Record created successfully', [
+                'best_time_id' => $bestTime->id
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('BestTimeController@store - Failed to create record', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw $e;
+        }
 
         // If this is a SESSION record, check if it beats the OVERALL record
         if ($validated['scope'] === 'SESSION') {
+            \Log::info('BestTimeController@store - Updating OVERALL if better');
             $this->updateOverallIfBetter($tournament->id, $validated['team_id'], $validated['track'], $validated['timer']);
         }
 
         // Publish to Ably (non-blocking - won't cause 500 error if it fails)
+        \Log::info('BestTimeController@store - Publishing to Ably');
         try {
             $this->publishTrackUpdate($tournament, $validated['track']);
+            \Log::info('BestTimeController@store - Ably publish successful');
         } catch (\Exception $e) {
             \Log::warning('Ably publish failed after storing best time', [
                 'error' => $e->getMessage(),
@@ -192,6 +230,9 @@ class BestTimeController extends Controller
         }
 
         // Redirect based on where the form was submitted from
+        \Log::info('BestTimeController@store - Redirecting', [
+            'redirect_route' => $validated['redirect_to'] ?? 'tournament.best_times.index'
+        ]);
         $redirectRoute = $validated['redirect_to'] ?? 'tournament.best_times.index';
         return redirect()->route($redirectRoute)
             ->with('success', 'Best time recorded successfully.');
