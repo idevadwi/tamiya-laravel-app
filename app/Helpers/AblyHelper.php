@@ -41,11 +41,19 @@ class AblyHelper
             $key = config('services.ably.key');
             
             if (!$key) {
-                Log::warning('Ably key not configured');
+                Log::warning('Ably key not configured', [
+                    'channel' => $channelName,
+                    'event' => $eventName
+                ]);
                 return false;
             }
             
-            $ably = new AblyRest($key);
+            // Initialize Ably with timeout options to prevent hanging
+            $ably = new AblyRest($key, [
+                'timeout' => 10, // 10 second timeout
+                'tls' => true
+            ]);
+            
             $channel = $ably->channels->get($channelName);
             $channel->publish($eventName, $data);
             
@@ -55,6 +63,16 @@ class AblyHelper
             ]);
             
             return true;
+        } catch (\Ably\Exceptions\AblyException $e) {
+            Log::error('Ably API error', [
+                'channel' => $channelName,
+                'event' => $eventName,
+                'error' => $e->getMessage(),
+                'code' => $e->getCode(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return false;
         } catch (\Exception $e) {
             Log::error('Ably publish failed', [
                 'channel' => $channelName,

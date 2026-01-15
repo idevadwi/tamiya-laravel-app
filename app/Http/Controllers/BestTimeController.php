@@ -179,8 +179,17 @@ class BestTimeController extends Controller
             $this->updateOverallIfBetter($tournament->id, $validated['team_id'], $validated['track'], $validated['timer']);
         }
 
-        // Publish to Ably
-        $this->publishTrackUpdate($tournament, $validated['track']);
+        // Publish to Ably (non-blocking - won't cause 500 error if it fails)
+        try {
+            $this->publishTrackUpdate($tournament, $validated['track']);
+        } catch (\Exception $e) {
+            \Log::warning('Ably publish failed after storing best time', [
+                'error' => $e->getMessage(),
+                'track' => $validated['track'],
+                'scope' => $validated['scope']
+            ]);
+            // Continue execution even if Ably fails
+        }
 
         // Redirect based on where the form was submitted from
         $redirectRoute = $validated['redirect_to'] ?? 'tournament.best_times.index';
@@ -321,8 +330,17 @@ class BestTimeController extends Controller
             $this->updateOverallIfBetter($tournament->id, $validated['team_id'], $validated['track'], $validated['timer']);
         }
 
-        // Publish to Ably
-        $this->publishTrackUpdate($tournament, $validated['track']);
+        // Publish to Ably (non-blocking - won't cause 500 error if it fails)
+        try {
+            $this->publishTrackUpdate($tournament, $validated['track']);
+        } catch (\Exception $e) {
+            \Log::warning('Ably publish failed after updating best time', [
+                'error' => $e->getMessage(),
+                'track' => $validated['track'],
+                'scope' => $validated['scope']
+            ]);
+            // Continue execution even if Ably fails
+        }
 
         return redirect()->route('tournament.best_times.index')
             ->with('success', 'Best time updated successfully.');
