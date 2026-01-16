@@ -216,6 +216,13 @@ $(document).ready(function() {
 
                 if (xhr.responseJSON && xhr.responseJSON.message) {
                     errorMessage = xhr.responseJSON.message;
+
+                    // If card not found, append the card number to the error message
+                    if (errorMessage.toLowerCase().includes('card') &&
+                        (errorMessage.toLowerCase().includes('not found') ||
+                         errorMessage.toLowerCase().includes('tidak ditemukan'))) {
+                        errorMessage = `${errorMessage} (Card: ${cardCode})`;
+                    }
                 } else if (xhr.responseJSON && xhr.responseJSON.errors) {
                     const errors = xhr.responseJSON.errors;
                     const firstError = Object.values(errors)[0];
@@ -224,9 +231,19 @@ $(document).ready(function() {
                     } else {
                         errorMessage = firstError;
                     }
+
+                    // If card not found error, append the card number
+                    if (errorMessage.toLowerCase().includes('card') &&
+                        (errorMessage.toLowerCase().includes('not found') ||
+                         errorMessage.toLowerCase().includes('tidak ditemukan'))) {
+                        errorMessage = `${errorMessage} (Card: ${cardCode})`;
+                    }
                 }
 
                 showMessage(errorMessage, 'error');
+
+                // Clear input on error
+                cardCodeInput.val('');
 
                 // Re-enable and focus input
                 cardCodeInput.prop('disabled', false).focus();

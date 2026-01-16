@@ -113,7 +113,7 @@ return [
         'enabled' => true,
         'mode' => 'fullscreen',
         'img' => [
-            'path' => 'images/logo/race-lane.png',
+            'path' => 'images/logo/race-lane-black.png',
             'alt' => 'Race Lane',
             'effect' => 'animation__shake',
             'width' => 80,
