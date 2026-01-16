@@ -37,6 +37,10 @@ jobs:
 
             cd ~/apps/tamiya-laravel-app
 
+            echo "🔧 Fixing permissions before git operations..."
+            sudo chown -R $USER:$USER storage bootstrap/cache 2>/dev/null || true
+            chmod -R u+w storage bootstrap/cache 2>/dev/null || true
+
             echo "📥 Fetching latest code..."
             git fetch origin
             git reset --hard origin/main
