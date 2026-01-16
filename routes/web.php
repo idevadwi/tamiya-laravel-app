@@ -139,6 +139,10 @@ Route::middleware(['auth', 'role.web:ADMINISTRATOR,MODERATOR', 'tournament.conte
     Route::post('/tournament-results', [\App\Http\Controllers\TournamentResultController::class, 'store'])->name('tournament_results.store');
     Route::delete('/tournament-results/{id}', [\App\Http\Controllers\TournamentResultController::class, 'destroy'])->name('tournament_results.destroy');
 
+    // Add Race page (Card tapping)
+    Route::get('/add-race', [\App\Http\Controllers\RaceController::class, 'addRacePage'])->name('races.add');
+    Route::post('/add-race/submit', [\App\Http\Controllers\RaceController::class, 'addRaceByCard'])->name('races.addByCard');
+
     // Proceed to next stage
     Route::post('/tournaments/next-stage', [TournamentController::class, 'nextStage'])->name('tournaments.nextStage');
 

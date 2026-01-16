@@ -552,8 +552,147 @@ class RaceController extends Controller
     }
 
     /**
+     * Show the Add Race page for card tapping.
+     */
+    public function addRacePage()
+    {
+        $tournament = getActiveTournament();
+
+        if (!$tournament) {
+            return redirect()->route('home')
+                ->with('error', 'Please select a tournament first.');
+        }
+
+        // Get total races in current stage
+        $currentStage = $tournament->current_stage + 1;
+        $totalRacesInStage = Race::where('tournament_id', $tournament->id)
+            ->where('stage', $currentStage)
+            ->count();
+
+        return view('races.add', compact('tournament', 'totalRacesInStage'));
+    }
+
+    /**
+     * Store a newly created race by card code.
+     */
+    public function addRaceByCard(Request $request)
+    {
+        $tournament = getActiveTournament();
+
+        if (!$tournament) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Please select a tournament first.'
+            ], 400);
+        }
+
+        $validated = $request->validate([
+            'card_code' => 'required|string',
+        ]);
+
+        // Find card by card_code
+        $card = Card::where('card_code', $validated['card_code'])
+            ->where('status', 'ACTIVE')
+            ->with('racer.team')
+            ->first();
+
+        if (!$card) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Card not found or inactive. Please check the card code.'
+            ], 404);
+        }
+
+        // Verify card's racer belongs to active tournament
+        if (!$card->racer_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Card is not assigned to any racer.'
+            ], 400);
+        }
+
+        $teamIds = TournamentParticipant::where('tournament_id', $tournament->id)
+            ->pluck('team_id');
+
+        $isValidRacer = Racer::whereIn('team_id', $teamIds)
+            ->where('id', $card->racer_id)
+            ->exists();
+
+        if (!$isValidRacer) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Card does not belong to the active tournament.'
+            ], 400);
+        }
+
+        // Get racer and team
+        $racer = $card->racer;
+        $team = $racer->team;
+
+        if (!$team) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Racer is not assigned to any team.'
+            ], 400);
+        }
+
+        // Calculate stage (use current_stage + 1)
+        $stage = $tournament->current_stage + 1;
+
+        // Calculate track and lane
+        $trackAndLane = $this->calculateTrackAndLane($tournament, $stage);
+
+        // Check if stage + race_no + lane combination already exists
+        $existingRace = Race::where('tournament_id', $tournament->id)
+            ->where('stage', $stage)
+            ->where('race_no', $trackAndLane['race_no'])
+            ->where('lane', $trackAndLane['lane'])
+            ->first();
+
+        if ($existingRace) {
+            return response()->json([
+                'success' => false,
+                'message' => 'A race already exists for Stage ' . $stage . ', Race No ' . $trackAndLane['race_no'] . ', Lane ' . $trackAndLane['lane'] . '.'
+            ], 400);
+        }
+
+        // Create race
+        $race = Race::create([
+            'id' => Str::uuid(),
+            'tournament_id' => $tournament->id,
+            'stage' => $stage,
+            'race_no' => $trackAndLane['race_no'],
+            'track' => $trackAndLane['track'],
+            'lane' => $trackAndLane['lane'],
+            'racer_id' => $racer->id,
+            'team_id' => $team->id,
+            'card_id' => $card->id,
+            'race_time' => null,
+            'created_by' => auth()->id(),
+        ]);
+
+        // Get updated total races count for this stage
+        $totalRacesInStage = Race::where('tournament_id', $tournament->id)
+            ->where('stage', $stage)
+            ->count();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Race created successfully!',
+            'data' => [
+                'team_name' => $team->team_name,
+                'racer_name' => $racer->racer_name,
+                'stage' => $stage,
+                'race_no' => $trackAndLane['race_no'],
+                'lane' => $trackAndLane['lane'],
+                'total_races_in_stage' => $totalRacesInStage,
+            ]
+        ], 201);
+    }
+
+    /**
      * Convert all races in a stage to use only 1 track.
-     * 
+     *
      * This will redistribute all racers from multiple tracks into new races
      * using only Track 1 with lanes A, B, C.
      */

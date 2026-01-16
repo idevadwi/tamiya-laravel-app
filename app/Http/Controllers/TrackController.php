@@ -77,7 +77,7 @@ class TrackController extends Controller
             2 => 'col-6',
             3 => 'col-4',
             4 => 'col-3',
-            default => 'col-2'
+            default => 'col-4'
         };
 
         return view('tracks.index', compact(

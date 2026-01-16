@@ -14,7 +14,7 @@ return [
     |
     */
 
-    'title' => 'AdminLTE 3',
+    'title' => 'Race Lane',
     'title_prefix' => '',
     'title_postfix' => '',
 
@@ -63,12 +63,12 @@ return [
     |
     */
 
-    'logo' => '<b>Admin</b>LTE',
-    'logo_img' => 'vendor/adminlte/dist/img/AdminLTELogo.png',
-    'logo_img_class' => 'brand-image img-circle elevation-3',
+    'logo' => '<b>RACE</b> LANE',
+    'logo_img' => 'images/logo/race-lane.png',
+    'logo_img_class' => 'brand-image elevation-3',
     'logo_img_xl' => null,
     'logo_img_xl_class' => 'brand-image-xs',
-    'logo_img_alt' => 'Admin Logo',
+    'logo_img_alt' => 'Race Lane Logo',
 
     /*
     |--------------------------------------------------------------------------
@@ -84,13 +84,13 @@ return [
     */
 
     'auth_logo' => [
-        'enabled' => false,
+        'enabled' => true,
         'img' => [
-            'path' => 'vendor/adminlte/dist/img/AdminLTELogo.png',
-            'alt' => 'Auth Logo',
+            'path' => 'images/logo/race-lane-black.png',
+            'alt' => 'Race Lane Logo',
             'class' => '',
-            'width' => 50,
-            'height' => 50,
+            'width' => 150,
+            'height' => 150,
         ],
     ],
 
@@ -113,11 +113,11 @@ return [
         'enabled' => true,
         'mode' => 'fullscreen',
         'img' => [
-            'path' => 'vendor/adminlte/dist/img/AdminLTELogo.png',
-            'alt' => 'AdminLTE Preloader Image',
+            'path' => 'images/logo/race-lane.png',
+            'alt' => 'Race Lane',
             'effect' => 'animation__shake',
-            'width' => 60,
-            'height' => 60,
+            'width' => 80,
+            'height' => 80,
         ],
     ],
 
@@ -418,6 +418,14 @@ return [
             'icon' => 'fas fa-fw fa-crown',
             'can' => 'accessTournament',
             'active' => ['tournament-results*', 'tournament_results*', 'tournament/tournament-results*'],
+        ],
+        [
+            'text' => 'Add Race',
+            'route' => 'tournament.races.add',
+            'icon' => 'fas fa-fw fa-bolt',
+            'can' => 'accessTournament',
+            'active' => ['add-race*', 'tournament/add-race*'],
+            'classes' => 'add-race-menu-item',
         ],
     ],
 
