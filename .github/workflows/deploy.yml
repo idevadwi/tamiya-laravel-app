@@ -44,8 +44,12 @@ jobs:
             fi
 
             echo "🔧 Fixing permissions before git operations..."
-            sudo chown -R $USER:$USER storage bootstrap/cache || echo "Warning: chown failed"
-            sudo chmod -R u+w storage bootstrap/cache || echo "Warning: chmod failed"
+            # Use Docker to fix permissions without requiring sudo
+            if [ -d "storage" ] || [ -d "bootstrap/cache" ]; then
+              docker run --rm -v $(pwd):/app -w /app alpine:latest sh -c \
+                "chown -R $(id -u):$(id -g) /app/storage /app/bootstrap/cache 2>/dev/null || true && \
+                chmod -R u+w /app/storage /app/bootstrap/cache 2>/dev/null || true"
+            fi
 
             echo "📥 Fetching latest code..."
             git fetch origin
