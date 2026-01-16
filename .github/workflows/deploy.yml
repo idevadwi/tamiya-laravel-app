@@ -37,9 +37,15 @@ jobs:
 
             cd ~/apps/tamiya-laravel-app
 
+            echo "🛑 Stopping Docker container to release file locks..."
+            if docker ps -q -f name=tamiya-laravel-app > /dev/null 2>&1; then
+              docker stop tamiya-laravel-app || true
+              docker rm tamiya-laravel-app || true
+            fi
+
             echo "🔧 Fixing permissions before git operations..."
-            sudo chown -R $USER:$USER storage bootstrap/cache 2>/dev/null || true
-            chmod -R u+w storage bootstrap/cache 2>/dev/null || true
+            sudo chown -R $USER:$USER storage bootstrap/cache || echo "Warning: chown failed"
+            sudo chmod -R u+w storage bootstrap/cache || echo "Warning: chmod failed"
 
             echo "📥 Fetching latest code..."
             git fetch origin
@@ -66,11 +72,6 @@ jobs:
             docker build -t tamiya-laravel-app:latest -f Dockerfile .
 
             echo "🔄 Performing rolling deployment..."
-            if docker ps -q -f name=tamiya-laravel-app > /dev/null 2>&1; then
-              docker stop tamiya-laravel-app || true
-              docker rm tamiya-laravel-app || true
-            fi
-
             docker-compose --env-file .env.production up -d tamiya-app
 
             echo "⏳ Waiting for health check..."
