@@ -1,0 +1,52 @@
+# Base image with all PHP extensions pre-installed
+# Build once and push to Docker Hub:
+#   docker build -f Dockerfile.base -t yourusername/php-laravel-base:8.3 .
+#   docker push yourusername/php-laravel-base:8.3
+
+FROM php:8.3-fpm-alpine
+
+# Install system dependencies and PHP extensions (this takes ~18 minutes)
+# After building once and pushing to registry, this never needs to run again
+RUN apk add --no-cache \
+    nginx \
+    supervisor \
+    git \
+    curl \
+    libpng-dev \
+    libzip-dev \
+    oniguruma-dev \
+    freetype-dev \
+    libjpeg-turbo-dev \
+    icu-dev \
+    mysql-client \
+    libpng \
+    libzip \
+    oniguruma \
+    freetype \
+    libjpeg-turbo \
+    icu-libs \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install -j$(nproc) \
+        pdo_mysql \
+        mbstring \
+        exif \
+        pcntl \
+        bcmath \
+        gd \
+        zip \
+        intl \
+    && apk del --no-cache \
+        libpng-dev \
+        libzip-dev \
+        oniguruma-dev \
+        freetype-dev \
+        libjpeg-turbo-dev \
+        icu-dev \
+    && rm -rf /var/cache/apk/* /tmp/*
+
+# Install Composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+# Create non-root user for Laravel
+RUN addgroup -g 1000 laravel && \
+    adduser -u 1000 -G laravel -s /bin/sh -D laravel

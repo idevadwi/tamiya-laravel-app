@@ -1,39 +1,12 @@
-# Base image - PHP 8.3 FPM Alpine
-FROM php:8.3-fpm-alpine
+# Use pre-built base image with PHP extensions already compiled
+# To build the base image (one-time, takes ~18 min):
+#   docker build -f Dockerfile.base -t yourusername/php-laravel-base:8.3 .
+#   docker push yourusername/php-laravel-base:8.3
+# Then replace 'yourusername' below with your Docker Hub username
+FROM deva1212/php-laravel-base:8.3
 
 # Set working directory
 WORKDIR /var/www/html
-
-# Install system dependencies
-RUN apk add --no-cache \
-    nginx \
-    supervisor \
-    git \
-    curl \
-    libpng-dev \
-    libzip-dev \
-    oniguruma-dev \
-    freetype-dev \
-    libjpeg-turbo-dev \
-    icu-dev \
-    mysql-client \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install -j$(nproc) \
-        pdo_mysql \
-        mbstring \
-        exif \
-        pcntl \
-        bcmath \
-        gd \
-        zip \
-        intl
-
-# Install Composer
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
-
-# Create non-root user for Laravel
-RUN addgroup -g 1000 laravel && \
-    adduser -u 1000 -G laravel -s /bin/sh -D laravel
 
 # Copy Nginx configuration
 COPY nginx-app.conf /etc/nginx/http.d/default.conf

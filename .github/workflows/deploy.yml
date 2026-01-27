@@ -8,7 +8,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 10  # Reduced: using pre-built base image now
 
     steps:
       - name: Checkout repository
@@ -25,7 +25,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT }}
-          command_timeout: 20m
+          command_timeout: 10m  # Reduced: using pre-built base image now
           envs: APP_KEY,DB_PASSWORD,ABLY_KEY
 
           script: |
