@@ -25,161 +25,194 @@ class ScannerController extends Controller
      */
     public function storeRace(Request $request)
     {
-        $deviceCode = $request->header('X-Device-Code');
+        try {
+            $deviceCode = $request->header('X-Device-Code');
 
-        if (!$deviceCode) {
-            return response()->json([
-                'success' => false,
-                'error_code' => 'DEVICE_CODE_MISSING',
-                'message' => 'X-Device-Code header is required.',
-            ], 400);
-        }
+            if (!$deviceCode) {
+                return response()->json([
+                    'success' => false,
+                    'error_code' => 'DEVICE_CODE_MISSING',
+                    'message' => 'X-Device-Code header is required.',
+                ], 400);
+            }
 
-        $validator = Validator::make($request->all(), [
-            'card_code' => 'required|string',
-        ]);
+            $validator = Validator::make($request->all(), [
+                'card_code' => 'required|string',
+            ]);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'error_code' => 'VALIDATION_ERROR',
-                'message' => 'Validation error',
-                'errors' => $validator->errors()
-            ], 422);
-        }
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'error_code' => 'VALIDATION_ERROR',
+                    'message' => 'Validation error',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
 
-        $device = ScannerDevice::where('device_code', $deviceCode)->first();
+            $device = ScannerDevice::with('tournament')->where('device_code', $deviceCode)->first();
 
-        if (!$device) {
-            return response()->json([
-                'success' => false,
-                'error_code' => 'DEVICE_NOT_REGISTERED',
-                'message' => 'Device is not registered. Please contact administrator.',
-            ], 404);
-        }
+            if (!$device) {
+                \Log::error('Scanner device not found', ['device_code' => $deviceCode]);
+                return response()->json([
+                    'success' => false,
+                    'error_code' => 'DEVICE_NOT_REGISTERED',
+                    'message' => 'Device is not registered. Please contact administrator.',
+                ], 404);
+            }
 
-        $device->updateLastSeen();
+            $device->updateLastSeen();
 
-        if ($device->status !== 'ACTIVE') {
-            return response()->json([
-                'success' => false,
-                'error_code' => 'DEVICE_INACTIVE',
-                'message' => "Device is {$device->status}. Please contact administrator.",
-            ], 403);
-        }
+            if ($device->status !== 'ACTIVE') {
+                \Log::error('Scanner device not active', ['device_code' => $deviceCode, 'status' => $device->status]);
+                return response()->json([
+                    'success' => false,
+                    'error_code' => 'DEVICE_INACTIVE',
+                    'message' => "Device is {$device->status}. Please contact administrator.",
+                ], 403);
+            }
 
-        if (!$device->tournament_id) {
-            return response()->json([
-                'success' => false,
-                'error_code' => 'DEVICE_NOT_LINKED',
-                'message' => 'Device is not linked to any tournament.',
-            ], 400);
-        }
+            if (!$device->tournament_id) {
+                \Log::error('Scanner device not linked to tournament', ['device_code' => $deviceCode]);
+                return response()->json([
+                    'success' => false,
+                    'error_code' => 'DEVICE_NOT_LINKED',
+                    'message' => 'Device is not linked to any tournament.',
+                ], 400);
+            }
 
-        $tournament = $device->tournament;
+            $tournament = $device->tournament;
 
-        if (!$tournament) {
-            return response()->json([
-                'success' => false,
-                'error_code' => 'TOURNAMENT_NOT_FOUND',
-                'message' => 'Linked tournament not found.',
-            ], 404);
-        }
+            if (!$tournament) {
+                \Log::error('Tournament not found for scanner device', [
+                    'device_code' => $deviceCode,
+                    'device_id' => $device->id,
+                    'tournament_id' => $device->tournament_id
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'error_code' => 'TOURNAMENT_NOT_FOUND',
+                    'message' => 'Linked tournament not found. The tournament may have been deleted. Please contact administrator.',
+                ], 404);
+            }
 
-        if ($tournament->status !== 'ACTIVE') {
-            return response()->json([
-                'success' => false,
-                'error_code' => 'TOURNAMENT_NOT_ACTIVE',
-                'message' => "Tournament is {$tournament->status}.",
-            ], 400);
-        }
+            if ($tournament->status !== 'ACTIVE') {
+                return response()->json([
+                    'success' => false,
+                    'error_code' => 'TOURNAMENT_NOT_ACTIVE',
+                    'message' => "Tournament is {$tournament->status}.",
+                ], 400);
+            }
 
-        $card = Card::with('racer.team')->where('card_code', $request->card_code)->first();
+            $card = Card::with('racer.team')->where('card_code', $request->card_code)->first();
 
-        if (!$card) {
-            return response()->json([
-                'success' => false,
-                'error_code' => 'CARD_NOT_FOUND',
-                'message' => 'Card not found.',
-            ], 404);
-        }
+            if (!$card) {
+                return response()->json([
+                    'success' => false,
+                    'error_code' => 'CARD_NOT_FOUND',
+                    'message' => 'Card not found.',
+                ], 404);
+            }
 
-        if (!$card->racer_id) {
-            return response()->json([
-                'success' => false,
-                'error_code' => 'CARD_NOT_ASSIGNED',
-                'message' => 'Card is not assigned to any racer.',
-            ], 400);
-        }
+            if (!$card->racer_id) {
+                return response()->json([
+                    'success' => false,
+                    'error_code' => 'CARD_NOT_ASSIGNED',
+                    'message' => 'Card is not assigned to any racer.',
+                ], 400);
+            }
 
-        $teamIds = TournamentParticipant::where('tournament_id', $tournament->id)
-            ->pluck('team_id');
+            $teamIds = TournamentParticipant::where('tournament_id', $tournament->id)
+                ->pluck('team_id');
 
-        $isValidRacer = Racer::whereIn('team_id', $teamIds)
-            ->where('id', $card->racer_id)
-            ->exists();
+            $isValidRacer = Racer::whereIn('team_id', $teamIds)
+                ->where('id', $card->racer_id)
+                ->exists();
 
-        if (!$isValidRacer) {
-            return response()->json([
-                'success' => false,
-                'error_code' => 'RACER_NOT_IN_TOURNAMENT',
-                'message' => 'Racer is not participating in this tournament.',
-            ], 400);
-        }
+            if (!$isValidRacer) {
+                return response()->json([
+                    'success' => false,
+                    'error_code' => 'RACER_NOT_IN_TOURNAMENT',
+                    'message' => 'Racer is not participating in this tournament.',
+                ], 400);
+            }
 
-        $racer = $card->racer;
-        $team = $racer->team;
+            $racer = $card->racer;
+            $team = $racer->team;
 
-        if (!$team) {
-            return response()->json([
-                'success' => false,
-                'error_code' => 'RACER_NO_TEAM',
-                'message' => 'Racer is not assigned to any team.',
-            ], 400);
-        }
+            if (!$team) {
+                return response()->json([
+                    'success' => false,
+                    'error_code' => 'RACER_NO_TEAM',
+                    'message' => 'Racer is not assigned to any team.',
+                ], 400);
+            }
 
-        $stage = $tournament->current_stage + 1;
-        $trackAndLane = $this->calculateTrackAndLane($tournament, $stage);
+            $stage = $tournament->current_stage + 1;
+            $trackAndLane = $this->calculateTrackAndLane($tournament, $stage);
 
-        $existingRace = Race::where('tournament_id', $tournament->id)
-            ->where('stage', $stage)
-            ->where('race_no', $trackAndLane['race_no'])
-            ->where('lane', $trackAndLane['lane'])
-            ->first();
+            $existingRace = Race::where('tournament_id', $tournament->id)
+                ->where('stage', $stage)
+                ->where('race_no', $trackAndLane['race_no'])
+                ->where('lane', $trackAndLane['lane'])
+                ->first();
 
-        if ($existingRace) {
-            return response()->json([
-                'success' => false,
-                'error_code' => 'RACE_SLOT_OCCUPIED',
-                'message' => "Race slot already occupied: Stage {$stage}, Race No {$trackAndLane['race_no']}, Lane {$trackAndLane['lane']}.",
-            ], 409);
-        }
+            if ($existingRace) {
+                return response()->json([
+                    'success' => false,
+                    'error_code' => 'RACE_SLOT_OCCUPIED',
+                    'message' => "Race slot already occupied: Stage {$stage}, Race No {$trackAndLane['race_no']}, Lane {$trackAndLane['lane']}.",
+                ], 409);
+            }
 
-        $race = Race::create([
-            'id' => Str::uuid(),
-            'tournament_id' => $tournament->id,
-            'stage' => $stage,
-            'race_no' => $trackAndLane['race_no'],
-            'track' => $trackAndLane['track'],
-            'lane' => $trackAndLane['lane'],
-            'racer_id' => $racer->id,
-            'team_id' => $team->id,
-            'card_id' => $card->id,
-            'race_time' => null,
-            'created_by' => null,
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Race created successfully',
-            'data' => [
+            $race = Race::create([
+                'id' => Str::uuid(),
+                'tournament_id' => $tournament->id,
+                'stage' => $stage,
                 'race_no' => $trackAndLane['race_no'],
                 'track' => $trackAndLane['track'],
                 'lane' => $trackAndLane['lane'],
-                'racer_name' => $racer->racer_name,
-                'team_name' => $team->team_name,
-            ]
-        ], 201);
+                'racer_id' => $racer->id,
+                'team_id' => $team->id,
+                'card_id' => $card->id,
+                'race_time' => null,
+                'created_by' => null,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Race created successfully',
+                'data' => [
+                    'race_no' => $trackAndLane['race_no'],
+                    'track' => $trackAndLane['track'],
+                    'lane' => $trackAndLane['lane'],
+                    'racer_name' => $racer->racer_name,
+                    'team_name' => $team->team_name,
+                ]
+            ], 201);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            \Log::error('Model not found exception in ScannerController@storeRace', [
+                'message' => $e->getMessage(),
+                'model' => $e->getModel(),
+                'ids' => $e->getIds(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'error_code' => 'MODEL_NOT_FOUND',
+                'message' => $e->getMessage(),
+            ], 404);
+        } catch (\Exception $e) {
+            \Log::error('Unexpected exception in ScannerController@storeRace', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'error_code' => 'INTERNAL_ERROR',
+                'message' => 'An unexpected error occurred. Please contact administrator.',
+            ], 500);
+        }
     }
 
     /**
@@ -187,40 +220,65 @@ class ScannerController extends Controller
      */
     public function heartbeat(Request $request)
     {
-        $deviceCode = $request->header('X-Device-Code');
+        try {
+            $deviceCode = $request->header('X-Device-Code');
 
-        if (!$deviceCode) {
+            if (!$deviceCode) {
+                return response()->json([
+                    'success' => false,
+                    'error_code' => 'DEVICE_CODE_MISSING',
+                    'message' => 'X-Device-Code header is required.',
+                ], 400);
+            }
+
+            $device = ScannerDevice::with('tournament')->where('device_code', $deviceCode)->first();
+
+            if (!$device) {
+                return response()->json([
+                    'success' => false,
+                    'error_code' => 'DEVICE_NOT_REGISTERED',
+                    'message' => 'Device is not registered.',
+                ], 404);
+            }
+
+            $device->updateLastSeen();
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'device_name' => $device->device_name,
+                    'status' => $device->status,
+                    'tournament' => $device->tournament ? [
+                        'id' => $device->tournament->id,
+                        'name' => $device->tournament->tournament_name,
+                        'status' => $device->tournament->status,
+                    ] : null,
+                ]
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            \Log::error('Model not found exception in ScannerController@heartbeat', [
+                'message' => $e->getMessage(),
+                'model' => $e->getModel(),
+                'ids' => $e->getIds(),
+            ]);
             return response()->json([
                 'success' => false,
-                'error_code' => 'DEVICE_CODE_MISSING',
-                'message' => 'X-Device-Code header is required.',
-            ], 400);
-        }
-
-        $device = ScannerDevice::with('tournament')->where('device_code', $deviceCode)->first();
-
-        if (!$device) {
-            return response()->json([
-                'success' => false,
-                'error_code' => 'DEVICE_NOT_REGISTERED',
-                'message' => 'Device is not registered.',
+                'error_code' => 'MODEL_NOT_FOUND',
+                'message' => $e->getMessage(),
             ], 404);
+        } catch (\Exception $e) {
+            \Log::error('Unexpected exception in ScannerController@heartbeat', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'error_code' => 'INTERNAL_ERROR',
+                'message' => 'An unexpected error occurred. Please contact administrator.',
+            ], 500);
         }
-
-        $device->updateLastSeen();
-
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'device_name' => $device->device_name,
-                'status' => $device->status,
-                'tournament' => $device->tournament ? [
-                    'id' => $device->tournament->id,
-                    'name' => $device->tournament->tournament_name,
-                    'status' => $device->tournament->status,
-                ] : null,
-            ]
-        ]);
     }
 
     /**
