@@ -357,6 +357,13 @@ return [
             'can' => 'isAdministrator',
             'active' => ['users*'],
         ],
+        [
+            'text' => 'Scanner Devices',
+            'route' => 'admin.scanner-devices.index',
+            'icon' => 'fas fa-fw fa-broadcast-tower',
+            'can' => 'isAdministrator',
+            'active' => ['admin/scanner-devices*'],
+        ],
 
         // TOURNAMENT MENU (MODERATOR + ADMIN)
         [

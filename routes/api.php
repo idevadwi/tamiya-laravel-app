@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\RacerController;
 use App\Http\Controllers\Api\CardController;
 use App\Http\Controllers\Api\TournamentController;
 use App\Http\Controllers\Api\RaceController;
+use App\Http\Controllers\Api\ScannerController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/register', [AuthController::class, 'register']);
@@ -64,6 +65,11 @@ Route::prefix('races')->group(function () {
     Route::post('/', [RaceController::class, 'store'])->name('api.races.store');
 });
 
+// Scanner device endpoints (no auth - device identified by X-Device-Code header)
+Route::prefix('scanner')->group(function () {
+    Route::post('/race', [ScannerController::class, 'storeRace'])->name('api.scanner.race');
+    Route::get('/heartbeat', [ScannerController::class, 'heartbeat'])->name('api.scanner.heartbeat');
+});
 
 // Health check endpoint for Docker
 Route::get('/health', function () {

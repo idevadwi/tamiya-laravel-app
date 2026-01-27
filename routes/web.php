@@ -104,6 +104,11 @@ Route::middleware(['auth', 'role.web:ADMINISTRATOR'])->prefix('admin')->name('ad
     Route::get('cards/bulk-create', [App\Http\Controllers\Admin\MasterCardController::class, 'bulkCreate'])->name('cards.bulk-create');
     Route::post('cards/bulk-create', [App\Http\Controllers\Admin\MasterCardController::class, 'bulkStore'])->name('cards.bulk-store');
     Route::resource('cards', App\Http\Controllers\Admin\MasterCardController::class);
+
+    // Scanner Device Management
+    Route::resource('scanner-devices', App\Http\Controllers\Admin\ScannerDeviceController::class);
+    Route::post('scanner-devices/{scanner_device}/link', [App\Http\Controllers\Admin\ScannerDeviceController::class, 'link'])->name('scanner-devices.link');
+    Route::post('scanner-devices/{scanner_device}/unlink', [App\Http\Controllers\Admin\ScannerDeviceController::class, 'unlink'])->name('scanner-devices.unlink');
 });
 
 // Tournament Routes (Moderator + Admin Scope)

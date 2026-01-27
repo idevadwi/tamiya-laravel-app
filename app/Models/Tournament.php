@@ -85,5 +85,8 @@ class Tournament extends Model
         return $this->hasMany(TournamentRacerParticipant::class);
     }
 
-
+    public function scannerDevices()
+    {
+        return $this->hasMany(ScannerDevice::class);
+    }
 }
