@@ -187,6 +187,8 @@ class ScannerController extends Controller
                     'lane' => $trackAndLane['lane'],
                     'racer_name' => $racer->racer_name,
                     'team_name' => $team->team_name,
+                    'tournament_name' => $tournament->tournament_name,
+                    'stage' => $stage,
                 ]
             ], 201);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
