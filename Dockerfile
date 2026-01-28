@@ -8,6 +8,10 @@ FROM deva1212/php-laravel-base:8.3
 # Set working directory
 WORKDIR /var/www/html
 
+# Configure PHP-FPM to run as laravel user instead of www-data
+RUN sed -i 's/user = www-data/user = laravel/g' /usr/local/etc/php-fpm.d/www.conf && \
+    sed -i 's/group = www-data/group = laravel/g' /usr/local/etc/php-fpm.d/www.conf
+
 # Copy Nginx configuration
 COPY nginx-app.conf /etc/nginx/http.d/default.conf
 
