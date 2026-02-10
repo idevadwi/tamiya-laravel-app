@@ -406,6 +406,13 @@ return [
             'active' => ['tournament/races*'],
         ],
         [
+            'text' => 'Announcer',
+            'route' => 'tournament.races.announcer',
+            'icon' => 'fas fa-fw fa-bullhorn',
+            'can' => 'accessTournament',
+            'active' => ['tournament/announcer*'],
+        ],
+        [
             'text' => 'Tracks',
             'route' => 'tournament.tracks.index',
             'icon' => 'fas fa-fw fa-road',

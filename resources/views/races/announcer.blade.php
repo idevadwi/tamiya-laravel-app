@@ -1,31 +1,49 @@
 @extends('adminlte::page')
 
-@section('title', 'Races')
+@section('title', 'Race Announcer')
 
 @section('content_header')
     <div class="d-flex justify-content-between align-items-center">
         <div>
-            <h1>Races</h1>
+            <h1>Race Announcer</h1>
             <p class="text-muted mb-0">Tournament: <strong>{{ $tournament->tournament_name }}</strong></p>
             <p class="text-muted mb-0">Current Stage: <strong>{{ $tournament->current_stage }}</strong></p>
         </div>
         <div class="d-flex">
             <div class="btn-group mr-2">
-                <a href="{{ route('tournament.races.index', array_merge(request()->all(), ['view' => 'team'])) }}" class="btn btn-default {{ $viewMode === 'team' ? 'active' : '' }}">
+                <a href="{{ route('tournament.races.announcer', array_merge(request()->all(), ['view' => 'team'])) }}" class="btn btn-default {{ $viewMode === 'team' ? 'active' : '' }}">
                     Races - Team Only
                 </a>
-                <a href="{{ route('tournament.races.index', array_merge(request()->all(), ['view' => 'with_racer'])) }}" class="btn btn-default {{ $viewMode === 'with_racer' ? 'active' : '' }}">
+                <a href="{{ route('tournament.races.announcer', array_merge(request()->all(), ['view' => 'with_racer'])) }}" class="btn btn-default {{ $viewMode === 'with_racer' ? 'active' : '' }}">
                     Races - With Racer
                 </a>
             </div>
-            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addRaceModal">
-                <i class="fas fa-plus"></i> Add New Race
-            </button>
         </div>
     </div>
 @stop
 
 @section('content')
+    <!-- Speech Control Toast -->
+    <div id="speechToast" class="speech-toast" style="display: none;">
+        <div class="speech-toast-content">
+            <div class="speech-toast-header">
+                <i class="fas fa-volume-up speech-icon"></i>
+                <span class="speech-toast-title">Race Announcement</span>
+            </div>
+            <div class="speech-toast-body">
+                <span id="speechRaceNo" class="speech-race-no"></span>
+            </div>
+            <div class="speech-toast-footer">
+                <button type="button" id="speechPauseBtn" class="btn btn-sm btn-warning">
+                    <i class="fas fa-pause"></i> Pause
+                </button>
+                <button type="button" id="speechStopBtn" class="btn btn-sm btn-danger">
+                    <i class="fas fa-stop"></i> Stop
+                </button>
+            </div>
+        </div>
+    </div>
+
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show" role="alert">
             {{ session('success') }}
@@ -46,9 +64,9 @@
 
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title">Races in Tournament</h3>
+            <h3 class="card-title">Race Announcer</h3>
             <div class="card-tools">
-                <form method="GET" action="{{ route('tournament.races.index') }}" class="form-inline" id="raceFilterForm">
+                <form method="GET" action="{{ route('tournament.races.announcer') }}" class="form-inline" id="raceFilterForm">
                     <input type="hidden" name="view" value="{{ $viewMode }}">
                     <div class="input-group input-group-sm mr-2">
                         <select name="stage" class="form-control" onchange="this.form.submit()" style="width: 120px;">
@@ -70,11 +88,14 @@
                     $lanesPerTrack = 3;
                     $totalLanes = $trackNumber * $lanesPerTrack;
                 @endphp
-                
+
                 <div class="table-responsive race-schedule-table">
                     <table class="table race-schedule-table-inner">
                         <thead>
                             <tr>
+                                <th rowspan="3" class="race-called-header">
+                                    <i class="fas fa-check"></i>
+                                </th>
                                 <th rowspan="3" class="race-no-header">
                                     RACE NO
                                 </th>
@@ -104,7 +125,26 @@
                         </thead>
                         <tbody>
                             @for($raceNo = 1; $raceNo <= $maxRaceNo; $raceNo++)
-                                <tr>
+                                @php
+                                    // Check if this race is called by checking any race in this race_no
+                                    $isCalled = false;
+                                    if (isset($racesByStage[$selectedStage][$raceNo])) {
+                                        foreach ($racesByStage[$selectedStage][$raceNo] as $raceInRow) {
+                                            if ($raceInRow && $raceInRow->is_called) {
+                                                $isCalled = true;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                @endphp
+                                <tr class="{{ $isCalled ? 'race-called-row' : '' }}">
+                                    <td class="race-called-cell">
+                                        <input type="checkbox"
+                                               class="race-called-checkbox"
+                                               data-stage="{{ $selectedStage }}"
+                                               data-race-no="{{ $raceNo }}"
+                                               {{ $isCalled ? 'checked' : '' }}>
+                                    </td>
                                     <td class="race-no-cell">
                                         {{ $raceNo }}
                                     </td>
@@ -151,71 +191,6 @@
             @endif
         </div>
     </div>
-
-    <!-- Add Race Modal -->
-    <div class="modal fade" id="addRaceModal" tabindex="-1" role="dialog" aria-labelledby="addRaceModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="addRaceModalLabel">Add New Race</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <form id="addRaceForm" action="{{ route('tournament.races.store') }}" method="POST">
-                @csrf
-                <div class="modal-body">
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle"></i>
-                        <strong>Note:</strong> When you add a new race, it will be automatically assigned to:
-                        <ul class="mb-0 mt-2">
-                            <li><strong>Stage:</strong> {{ $tournament->current_stage + 1 }}</li>
-                            <li><strong>Track & Lane:</strong> Automatically calculated based on existing races in the stage</li>
-                            <li><strong>Racer & Team:</strong> Automatically retrieved from the selected card</li>
-                        </ul>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="card_id">Card <span class="text-danger">*</span></label>
-                        <select class="form-control" id="card_id" name="card_id" required>
-                            <option value="">Select a card...</option>
-                            @foreach($cards as $card)
-                                <option value="{{ $card->id }}">
-                                    {{ $card->card_code }}
-                                    @if($card->racer)
-                                        - {{ $card->racer->racer_name }}
-                                        @if($card->racer->team)
-                                            ({{ $card->racer->team->team_name }})
-                                        @endif
-                                    @else
-                                        - Unassigned
-                                    @endif
-                                </option>
-                            @endforeach
-                        </select>
-                        <small class="form-text text-muted">
-                            Select a card from the active tournament. Only ACTIVE cards are shown.
-                        </small>
-                    </div>
-
-                    @if($cards->isEmpty())
-                        <div class="alert alert-warning">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            <strong>No active cards available!</strong> Please create cards first or activate existing cards.
-                        </div>
-                    @endif
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-default" data-dismiss="modal">
-                        <i class="fas fa-times"></i> Cancel
-                    </button>
-                    <button type="submit" class="btn btn-primary" {{ $cards->isEmpty() ? 'disabled' : '' }}>
-                        <i class="fas fa-save"></i> Create Race
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
 @stop
 
 @section('css')
@@ -232,7 +207,7 @@
         --race-stage-header-height: 56px;
         --race-track-header-height: 42px;
         --race-lane-header-height: 38px;
-        
+
         /* Track 2 - Pastel Blue */
         --track-2-header: #B3E5FC;
         --track-2-lane: #E1F5FE;
@@ -240,7 +215,7 @@
         --track-2-cell-filled: #E3F7FF;
         --track-2-badge: #039BE5;
         --track-2-border: #81D4FA;
-        
+
         /* Track 3 - Pastel Green */
         --track-3-header: #C8E6C9;
         --track-3-lane: #E8F5E9;
@@ -248,7 +223,7 @@
         --track-3-cell-filled: #E8F5E9;
         --track-3-badge: #43A047;
         --track-3-border: #A5D6A7;
-        
+
         /* Track 4 - Pastel Purple */
         --track-4-header: #E1BEE7;
         --track-4-lane: #F3E5F5;
@@ -256,7 +231,7 @@
         --track-4-cell-filled: #F3E5F5;
         --track-4-badge: #8E24AA;
         --track-4-border: #CE93D8;
-        
+
         /* Track 5 - Pastel Orange */
         --track-5-header: #F8BBD9;
         --track-5-lane: #FCE4EC;
@@ -264,7 +239,7 @@
         --track-5-cell-filled: #FFEBF0;
         --track-5-badge: #E91E63;
         --track-5-border: #F48FB1;
-        
+
         /* Track 6 - Pastel Teal */
         --track-6-header: #B2DFDB;
         --track-6-lane: #E0F2F1;
@@ -275,7 +250,6 @@
     }
 
     .race-schedule-table {
-        /* padding: 20px 0; */
         background: #F5F5F5;
         border-radius: 12px;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08);
@@ -373,6 +347,55 @@
     .lane-header.track-5 { background: var(--track-5-lane); border: 1px solid var(--track-5-border); }
     .lane-header.track-6 { background: var(--track-6-lane); border: 1px solid var(--track-6-border); }
 
+    /* Race Called Header */
+    .race-called-header {
+        background: #ECEFF1;
+        color: #37474F;
+        text-align: center;
+        vertical-align: middle;
+        font-weight: 700;
+        font-size: 16px;
+        width: 50px;
+        padding: 12px 8px;
+        border: 1px solid #CFD8DC;
+        position: sticky;
+        left: 0;
+        z-index: 95;
+    }
+
+    /* Race Called Cell */
+    .race-called-cell {
+        background: #FAFAFA;
+        text-align: center;
+        padding: 14px 8px;
+        border: 1px solid #E0E0E0;
+        min-width: 50px;
+        position: sticky;
+        left: 0;
+        z-index: 10;
+        box-shadow: 2px 0 4px rgba(0, 0, 0, 0.03);
+    }
+
+    .race-called-checkbox {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+    }
+
+    /* Called Row Styling */
+    .race-called-row {
+        background: #e8f5e9 !important;
+    }
+
+    .race-called-row .race-no-cell,
+    .race-called-row .race-called-cell {
+        background: #c8e6c9 !important;
+    }
+
+    .race-called-row .race-cell {
+        opacity: 0.7;
+    }
+
     /* Race No Header */
     .race-no-header {
         background: #ECEFF1;
@@ -387,7 +410,7 @@
         writing-mode: vertical-rl;
         text-orientation: mixed;
         position: sticky;
-        left: 0;
+        left: 50px;
         z-index: 95;
     }
 
@@ -402,7 +425,7 @@
         color: #37474F;
         min-width: 90px;
         position: sticky;
-        left: 0;
+        left: 50px;
         z-index: 10;
         box-shadow: 2px 0 4px rgba(0, 0, 0, 0.03);
     }
@@ -542,52 +565,329 @@
         }
     }
 
+    /* Speech Control Toast Styles */
+    .speech-toast {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        animation: slideIn 0.3s ease-out;
+    }
+
+    @keyframes slideIn {
+        from {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    @keyframes slideOut {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+    }
+
+    .speech-toast.slide-out {
+        animation: slideOut 0.3s ease-out forwards;
+    }
+
+    .speech-toast-content {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        min-width: 320px;
+        overflow: hidden;
+    }
+
+    .speech-toast-header {
+        display: flex;
+        align-items: center;
+        padding: 16px;
+        background: rgba(255, 255, 255, 0.1);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .speech-icon {
+        font-size: 20px;
+        color: #ffffff;
+        margin-right: 12px;
+    }
+
+    .speech-toast-title {
+        color: #ffffff;
+        font-weight: 600;
+        font-size: 16px;
+    }
+
+    .speech-toast-body {
+        padding: 16px;
+        text-align: center;
+    }
+
+    .speech-race-no {
+        color: #ffffff;
+        font-size: 24px;
+        font-weight: 700;
+        letter-spacing: 2px;
+    }
+
+    .speech-toast-footer {
+        display: flex;
+        gap: 8px;
+        padding: 12px 16px;
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .speech-toast-footer .btn {
+        flex: 1;
+        font-size: 13px;
+        padding: 8px 12px;
+        border: none;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+
+    .speech-toast-footer .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .speech-toast-footer .btn:active {
+        transform: translateY(0);
+    }
+
+    /* Speaking indicator animation */
+    .speech-icon.speaking {
+        animation: pulse 1s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% {
+            transform: scale(1);
+            opacity: 1;
+        }
+        50% {
+            transform: scale(1.1);
+            opacity: 0.8;
+        }
+    }
 </style>
 @stop
 
 @section('js')
 <script>
 $(document).ready(function() {
-    // Handle Add Race Form Submission
-    $('#addRaceForm').on('submit', function(e) {
-        e.preventDefault();
-        
-        const form = $(this);
-        const formData = new FormData(this);
-        formData.append('stage', {{ $tournament->current_stage + 1 }});
+    // Initialize Speech Synthesis
+    const synth = window.speechSynthesis;
+    let indonesianVoice = null;
 
+    // Load voices (voices may load asynchronously)
+    function loadVoices() {
+        const voices = synth.getVoices();
+
+        // Try to find Indonesian voice
+        indonesianVoice = voices.find(voice => voice.lang.startsWith('id'));
+    }
+
+    // Load voices on page load and when voices change
+    loadVoices();
+    if (synth.onvoiceschanged !== undefined) {
+        synth.onvoiceschanged = loadVoices;
+    }
+
+    // Speech control variables
+    let currentUtterance = null;
+    let isPaused = false;
+
+    // Function to show speech toast
+    function showSpeechToast(raceNo) {
+        const toast = $('#speechToast');
+        const raceNoSpan = $('#speechRaceNo');
+        const pauseBtn = $('#speechPauseBtn');
+        const icon = $('.speech-icon');
+
+        // Set race number
+        raceNoSpan.text(`Race ${raceNo}`);
+
+        // Reset pause button state
+        isPaused = false;
+        pauseBtn.html('<i class="fas fa-pause"></i> Pause');
+        pauseBtn.removeClass('btn-success').addClass('btn-warning');
+
+        // Show toast
+        toast.css('display', 'block').removeClass('slide-out');
+
+        // Add speaking animation to icon
+        icon.addClass('speaking');
+    }
+
+    // Function to hide speech toast
+    function hideSpeechToast(animate = true) {
+        const toast = $('#speechToast');
+        const icon = $('.speech-icon');
+
+        // Remove speaking animation
+        icon.removeClass('speaking');
+
+        if (animate) {
+            // Add slide out animation
+            toast.addClass('slide-out');
+
+            // Hide after animation completes
+            setTimeout(() => {
+                toast.css('display', 'none').removeClass('slide-out');
+            }, 300);
+        } else {
+            // Immediately hide without animation
+            toast.css('display', 'none').removeClass('slide-out');
+        }
+    }
+
+    // Function to stop current speech and hide toast
+    function stopCurrentSpeech() {
+        // Cancel any ongoing speech
+        synth.cancel();
+
+        // Clear current utterance to prevent event handlers from firing
+        if (currentUtterance) {
+            currentUtterance.onend = null;
+            currentUtterance.onerror = null;
+            currentUtterance = null;
+        }
+
+        // Reset pause state
+        isPaused = false;
+
+        // Hide toast immediately without animation
+        hideSpeechToast(false);
+    }
+
+    // Function to speak race number
+    function speakRaceNumber(raceNo) {
+        // Stop any ongoing speech completely
+        stopCurrentSpeech();
+
+        // Create utterance in Indonesian
+        let text = `Persiapan reis ke ${raceNo}, panggilan pertama reis ke ${raceNo}, panggilan kedua reis ke ${raceNo}, panggilan ketiga reis ke ${raceNo}. `;
+        text += `Sepuluh,sembilan,delapan,tujuh,enam,lima,empat,tiga,dua,satu. Einjin ON redi GOo !`;
+
+        // If no Indonesian voice available, use simpler English that sounds clear
+        if (!indonesianVoice) {
+            text = `Race ${raceNo}`;
+        }
+
+        currentUtterance = new SpeechSynthesisUtterance(text);
+
+        // Set language to Indonesian if voice is available
+        if (indonesianVoice) {
+            currentUtterance.lang = 'id-ID';
+            currentUtterance.voice = indonesianVoice;
+        } else {
+            currentUtterance.lang = 'en-US';
+        }
+
+        // Configure voice settings
+        currentUtterance.rate = 1.1;
+        currentUtterance.pitch = 1.0;
+        currentUtterance.volume = 1.0;
+
+        // Add event handlers
+        currentUtterance.onend = function() {
+            if (currentUtterance) {
+                hideSpeechToast();
+                currentUtterance = null;
+                isPaused = false;
+            }
+        };
+
+        currentUtterance.onerror = function() {
+            if (currentUtterance) {
+                hideSpeechToast();
+                currentUtterance = null;
+                isPaused = false;
+            }
+        };
+
+        // Show toast and speak
+        showSpeechToast(raceNo);
+        synth.speak(currentUtterance);
+    }
+
+    // Handle pause/resume button
+    $('#speechPauseBtn').on('click', function() {
+        const btn = $(this);
+
+        if (isPaused) {
+            // Resume speech
+            synth.resume();
+            isPaused = false;
+            btn.html('<i class="fas fa-pause"></i> Pause');
+            btn.removeClass('btn-success').addClass('btn-warning');
+        } else {
+            // Pause speech
+            synth.pause();
+            isPaused = true;
+            btn.html('<i class="fas fa-play"></i> Resume');
+            btn.removeClass('btn-warning').addClass('btn-success');
+        }
+    });
+
+    // Handle stop button
+    $('#speechStopBtn').on('click', function() {
+        stopCurrentSpeech();
+    });
+
+    // Handle race called checkbox
+    $('.race-called-checkbox').on('change', function() {
+        const checkbox = $(this);
+        const stage = checkbox.data('stage');
+        const raceNo = checkbox.data('race-no');
+        const isCalled = checkbox.is(':checked');
+        const row = checkbox.closest('tr');
+
+        // Speak race number when checkbox is checked
+        if (isCalled) {
+            speakRaceNumber(raceNo);
+        }
+
+        // Send AJAX request
         $.ajax({
-            url: form.attr('action'),
+            url: '{{ route("tournament.races.toggleCalled") }}',
             method: 'POST',
-            data: formData,
-            processData: false,
-            contentType: false,
+            data: {
+                _token: '{{ csrf_token() }}',
+                stage: stage,
+                race_no: raceNo,
+                is_called: isCalled ? 1 : 0
+            },
             success: function(response) {
-                // Close modal
-                $('#addRaceModal').modal('hide');
-                
-                // Reset form
-                form[0].reset();
-                
-                // Reload page to show new race
-                location.reload();
+                // Toggle row styling
+                if (isCalled) {
+                    row.addClass('race-called-row');
+                } else {
+                    row.removeClass('race-called-row');
+                }
             },
             error: function(xhr) {
-                let errorMessage = 'Failed to create race. Please try again.';
-                
-                if (xhr.responseJSON && xhr.responseJSON.errors) {
-                    const errors = xhr.responseJSON.errors;
-                    const firstError = Object.values(errors)[0];
-                    if (Array.isArray(firstError)) {
-                        errorMessage = firstError[0];
-                    } else {
-                        errorMessage = firstError;
-                    }
-                }
-                
-                alert(errorMessage);
+                // Revert checkbox on error
+                checkbox.prop('checked', !isCalled);
+                alert('Failed to update race status. Please try again.');
             }
         });
+    });
+
+    // Hide speech toast if page is unloaded
+    $(window).on('beforeunload', function() {
+        synth.cancel();
     });
 });
 </script>

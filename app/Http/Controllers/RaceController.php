@@ -15,15 +15,14 @@ use Illuminate\Support\Str;
 class RaceController extends Controller
 {
     /**
-     * Display a listing of races in the active tournament.
+     * Get shared race grid data for index and announcer views.
      */
-    public function index(Request $request)
+    private function getRaceGridData(Request $request): ?array
     {
         $tournament = getActiveTournament();
 
         if (!$tournament) {
-            return redirect()->route('home')
-                ->with('error', 'Please select a tournament first.');
+            return null;
         }
 
         // Determine view mode
@@ -65,14 +64,6 @@ class RaceController extends Controller
             ->pluck('team_id');
         $teams = Team::whereIn('id', $teamIds)->orderBy('team_name')->get();
 
-        // Get cards in the active tournament for modal
-        $racerIds = Racer::whereIn('team_id', $teamIds)->pluck('id');
-        $cards = Card::whereIn('racer_id', $racerIds)
-            ->where('status', 'ACTIVE')
-            ->with(['racer.team'])
-            ->orderBy('card_code')
-            ->get();
-
         // Get all races (no pagination for grid view)
         $allRaces = $query->orderBy('stage', 'desc')
             ->orderBy('race_no')
@@ -113,18 +104,56 @@ class RaceController extends Controller
         // Calculate max race number to display (show at least 12 rows)
         $maxRaceNo = max(12, $raceNumbers ? max($raceNumbers) : 0);
 
-        return view('races.index', compact(
+        return compact(
             'racesByStage',
             'tournament',
             'stages',
             'tracks',
             'teams',
+            'teamIds',
             'selectedStage',
             'raceNumbers',
             'maxRaceNo',
-            'viewMode',
-            'cards'
-        ));
+            'viewMode'
+        );
+    }
+
+    /**
+     * Display a listing of races in the active tournament.
+     */
+    public function index(Request $request)
+    {
+        $data = $this->getRaceGridData($request);
+
+        if (!$data) {
+            return redirect()->route('home')
+                ->with('error', 'Please select a tournament first.');
+        }
+
+        // Get cards in the active tournament for the Add Race modal
+        $racerIds = Racer::whereIn('team_id', $data['teamIds'])->pluck('id');
+        $data['cards'] = Card::whereIn('racer_id', $racerIds)
+            ->where('status', 'ACTIVE')
+            ->with(['racer.team'])
+            ->orderBy('card_code')
+            ->get();
+
+        return view('races.index', $data);
+    }
+
+    /**
+     * Display the race announcer page.
+     */
+    public function announcer(Request $request)
+    {
+        $data = $this->getRaceGridData($request);
+
+        if (!$data) {
+            return redirect()->route('home')
+                ->with('error', 'Please select a tournament first.');
+        }
+
+        return view('races.announcer', $data);
     }
 
     /**
@@ -818,4 +847,5 @@ class RaceController extends Controller
             return response()->json(['error' => 'Failed to convert races: ' . $e->getMessage()], 500);
         }
     }
+
 }

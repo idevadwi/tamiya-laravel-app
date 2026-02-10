@@ -133,6 +133,8 @@ Route::middleware(['auth', 'role.web:ADMINISTRATOR,MODERATOR', 'tournament.conte
     Route::post('/races/balance', [\App\Http\Controllers\RaceController::class, 'balanceRaces'])->name('races.balance');
     Route::post('/races/convert-to-single-track', [\App\Http\Controllers\RaceController::class, 'convertToSingleTrack'])->name('races.convertToSingleTrack');
 
+    Route::get('/announcer', [\App\Http\Controllers\RaceController::class, 'announcer'])->name('races.announcer');
+
     // Best Times management
     Route::resource('best_times', \App\Http\Controllers\BestTimeController::class);
 
