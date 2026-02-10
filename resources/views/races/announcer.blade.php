@@ -89,8 +89,9 @@
                     $totalLanes = $trackNumber * $lanesPerTrack;
                 @endphp
 
-                <div class="table-responsive race-schedule-table">
-                    <table class="table race-schedule-table-inner">
+                <div class="race-schedule-table-wrapper">
+                    <div class="table-responsive race-schedule-table">
+                        <table class="table race-schedule-table-inner">
                         <thead>
                             <tr>
                                 <th rowspan="3" class="race-called-header">
@@ -182,7 +183,8 @@
                                 </tr>
                             @endfor
                         </tbody>
-                    </table>
+                        </table>
+                    </div>
                 </div>
             @else
                 <div class="alert alert-info">
@@ -249,14 +251,19 @@
         --track-6-border: #80CBC4;
     }
 
-    .race-schedule-table {
+    .race-schedule-table-wrapper {
         background: #F5F5F5;
         border-radius: 12px;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08);
         max-height: 75vh;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .race-schedule-table {
+        max-height: 75vh;
         overflow: auto;
         position: relative;
-        border-radius: 12px;
     }
 
     .race-schedule-table-inner {
@@ -435,12 +442,16 @@
         text-align: center;
         padding: 12px 8px;
         min-width: 120px;
-        height: 50px;
+        max-width: 180px;
+        height: auto;
+        min-height: 50px;
         vertical-align: middle;
         border: 1px solid #E0E0E0;
         transition: all 0.2s ease;
         position: relative;
         z-index: 1;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
     }
 
     /* Triple same-team highlight */
@@ -483,13 +494,18 @@
     .team-badge {
         display: inline-block;
         color: #ffffff;
-        padding: 8px 16px;
+        padding: 8px 12px;
         border-radius: 20px;
         font-weight: 600;
         font-size: 14px;
         letter-spacing: 0.5px;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
         transition: all 0.2s ease;
+        max-width: 100%;
+        white-space: normal;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        line-height: 1.4;
     }
 
     /* Team Badge Colors */
@@ -512,8 +528,12 @@
 
     /* Responsive adjustments */
     @media (max-width: 768px) {
+        .race-schedule-table-wrapper {
+            max-height: 65vh;
+        }
+
         .race-schedule-table {
-            padding: 10px 0;
+            max-height: 65vh;
         }
 
         .stage-header {
@@ -540,13 +560,35 @@
 
         .race-cell {
             min-width: 90px;
+            max-width: 140px;
             padding: 10px 6px;
         }
 
         .team-badge {
-            padding: 6px 12px;
+            padding: 6px 10px;
             font-size: 11px;
+            line-height: 1.3;
         }
+    }
+
+    /* Horizontal scrollbar styling */
+    .race-schedule-table::-webkit-scrollbar {
+        height: 12px;
+        width: 12px;
+    }
+
+    .race-schedule-table::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 6px;
+    }
+
+    .race-schedule-table::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 6px;
+    }
+
+    .race-schedule-table::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
     }
 
     /* Print styles */
