@@ -221,6 +221,47 @@
                         </div>
                     </div>
                 </div>
+
+                <hr>
+                <h4 class="mb-3">Announcer Settings</h4>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="persiapan_delay">Persiapan Delay (milliseconds)</label>
+                            <input type="number" 
+                                   class="form-control @error('persiapan_delay') is-invalid @enderror" 
+                                   id="persiapan_delay" 
+                                   name="persiapan_delay" 
+                                   value="{{ old('persiapan_delay', $tournament->persiapan_delay ?? 2000) }}" 
+                                   min="0"
+                                   step="100">
+                            <small class="form-text text-muted">Delay after "Persiapan race ke X" announcement (default: 2000ms)</small>
+                            @error('persiapan_delay')
+                                <span class="invalid-feedback" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
+                            @enderror
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="panggilan_delay">Panggilan Delay (milliseconds)</label>
+                            <input type="number" 
+                                   class="form-control @error('panggilan_delay') is-invalid @enderror" 
+                                   id="panggilan_delay" 
+                                   name="panggilan_delay" 
+                                   value="{{ old('panggilan_delay', $tournament->panggilan_delay ?? 1000) }}" 
+                                   min="0"
+                                   step="100">
+                            <small class="form-text text-muted">Delay after each "Panggilan" announcement (default: 1000ms)</small>
+                            @error('panggilan_delay')
+                                <span class="invalid-feedback" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
+                            @enderror
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="card-footer">
                 <button type="submit" class="btn btn-primary">

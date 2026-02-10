@@ -24,6 +24,8 @@ class Tournament extends Model
         'champion_number',
         'best_race_enabled',
         'best_race_number',
+        'persiapan_delay',
+        'panggilan_delay',
         'status',
         'created_by',
         'updated_by'

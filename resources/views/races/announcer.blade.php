@@ -690,6 +690,10 @@ $(document).ready(function() {
     const synth = window.speechSynthesis;
     let indonesianVoice = null;
 
+    // Get delay values from tournament configuration
+    const persiapanDelay = {{ $tournament->persiapan_delay ?? 2000 }};
+    const panggilanDelay = {{ $tournament->panggilan_delay ?? 1000 }};
+
     // Load voices (voices may load asynchronously)
     function loadVoices() {
         const voices = synth.getVoices();
@@ -772,54 +776,64 @@ $(document).ready(function() {
     }
 
     // Function to speak race number
-    function speakRaceNumber(raceNo) {
-        // Stop any ongoing speech completely
+    async function speakRaceNumber(raceNo) {
         stopCurrentSpeech();
 
-        // Create utterance in Indonesian
-        let text = `Persiapan reis ke ${raceNo}, panggilan pertama reis ke ${raceNo}, panggilan kedua reis ke ${raceNo}, panggilan ketiga reis ke ${raceNo}. `;
-        text += `Sepuluh,sembilan,delapan,tujuh,enam,lima,empat,tiga,dua,satu. Einjin ON redi GOo !`;
+        const synth = window.speechSynthesis;
 
-        // If no Indonesian voice available, use simpler English that sounds clear
-        if (!indonesianVoice) {
-            text = `Race ${raceNo}`;
+        function speak(text) {
+            return new Promise(resolve => {
+                currentUtterance = new SpeechSynthesisUtterance(text);
+
+                if (indonesianVoice) {
+                    currentUtterance.lang = 'id-ID';
+                    currentUtterance.voice = indonesianVoice;
+                } else {
+                    currentUtterance.lang = 'en-US';
+                }
+
+                currentUtterance.rate = 1.1;
+                currentUtterance.pitch = 1.0;
+                currentUtterance.volume = 1.0;
+
+                currentUtterance.onend = resolve;
+                currentUtterance.onerror = resolve;
+
+                synth.speak(currentUtterance);
+            });
         }
 
-        currentUtterance = new SpeechSynthesisUtterance(text);
-
-        // Set language to Indonesian if voice is available
-        if (indonesianVoice) {
-            currentUtterance.lang = 'id-ID';
-            currentUtterance.voice = indonesianVoice;
-        } else {
-            currentUtterance.lang = 'en-US';
+        function wait(ms) {
+            return new Promise(r => setTimeout(r, ms));
         }
 
-        // Configure voice settings
-        currentUtterance.rate = 1.1;
-        currentUtterance.pitch = 1.0;
-        currentUtterance.volume = 1.0;
-
-        // Add event handlers
-        currentUtterance.onend = function() {
-            if (currentUtterance) {
-                hideSpeechToast();
-                currentUtterance = null;
-                isPaused = false;
-            }
-        };
-
-        currentUtterance.onerror = function() {
-            if (currentUtterance) {
-                hideSpeechToast();
-                currentUtterance = null;
-                isPaused = false;
-            }
-        };
-
-        // Show toast and speak
         showSpeechToast(raceNo);
-        synth.speak(currentUtterance);
+
+        try {
+            if (!indonesianVoice) {
+                await speak(`Race ${raceNo}`);
+                hideSpeechToast();
+                return;
+            }
+
+            await speak(`Persiapan reis ke ${raceNo}`);
+            await wait(persiapanDelay);
+
+            await speak(`Panggilan pertama reis ke ${raceNo}`);
+            await wait(panggilanDelay);
+
+            await speak(`Panggilan kedua reis ke ${raceNo}`);
+            await wait(panggilanDelay);
+
+            await speak(`Panggilan ketiga reis ke ${raceNo}`);
+
+            await speak(`Sepuluh,sembilan,delapan,tujuh,enam,lima,empat,tiga,dua,satu. Einjin ON redi GOo !`);
+
+        } finally {
+            hideSpeechToast();
+            currentUtterance = null;
+            isPaused = false;
+        }
     }
 
     // Handle pause/resume button

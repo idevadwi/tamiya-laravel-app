@@ -103,6 +103,8 @@ class TournamentController extends Controller
             'champion_number' => 'nullable|integer|min:1',
             'best_race_enabled' => 'nullable|boolean',
             'best_race_number' => 'nullable|integer|min:1',
+            'persiapan_delay' => 'nullable|integer|min:0',
+            'panggilan_delay' => 'nullable|integer|min:0',
             'status' => 'nullable|in:PLANNED,ACTIVE,COMPLETED,CANCELLED',
         ]);
 
@@ -120,6 +122,8 @@ class TournamentController extends Controller
             'champion_number' => $validated['champion_number'] ?? 3,
             'best_race_enabled' => isset($request->best_race_enabled) && $request->best_race_enabled == '1',
             'best_race_number' => $validated['best_race_number'] ?? 1,
+            'persiapan_delay' => $validated['persiapan_delay'] ?? 2000,
+            'panggilan_delay' => $validated['panggilan_delay'] ?? 1000,
             'status' => $validated['status'] ?? 'PLANNED',
             'created_by' => auth()->id(),
         ]);
@@ -162,6 +166,8 @@ class TournamentController extends Controller
             'champion_number' => 'nullable|integer|min:1',
             'best_race_enabled' => 'nullable|boolean',
             'best_race_number' => 'nullable|integer|min:1',
+            'persiapan_delay' => 'nullable|integer|min:0',
+            'panggilan_delay' => 'nullable|integer|min:0',
             'status' => 'nullable|in:PLANNED,ACTIVE,COMPLETED,CANCELLED',
         ]);
 
@@ -216,6 +222,8 @@ class TournamentController extends Controller
             'champion_number' => 'nullable|integer|min:1',
             'best_race_enabled' => 'nullable|boolean',
             'best_race_number' => 'nullable|integer|min:1',
+            'persiapan_delay' => 'nullable|integer|min:0',
+            'panggilan_delay' => 'nullable|integer|min:0',
             'status' => 'nullable|in:PLANNED,ACTIVE,COMPLETED,CANCELLED',
         ]);
 
