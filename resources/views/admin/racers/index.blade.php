@@ -72,10 +72,10 @@
                     <tr>
                         <th>Racer Name</th>
                         <th>Team</th>
-                        <th>Image</th>
+                        {{-- <th>Image</th> --}}
                         <th>Total Cards</th>
                         <th>Tournaments</th>
-                        <th>Created At</th>
+                        {{-- <th>Created At</th> --}}
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -92,38 +92,38 @@
                                     <span class="text-muted">Unassigned</span>
                                 @endif
                             </td>
-                            <td>
+                            {{-- <td>
                                 @if($racer->image)
                                     <img src="{{ Storage::url($racer->image) }}" alt="{{ $racer->racer_name }}"
                                         style="height: 30px;">
                                 @else
                                     <span class="text-muted">No Image</span>
                                 @endif
-                            </td>
+                            </td> --}}
                             <td>
                                 <span class="badge badge-info">{{ $racer->cards_count }}</span>
                             </td>
                             <td>
                                 <span class="badge badge-secondary">{{ $racer->tournament_racer_participants_count }}</span>
                             </td>
-                            <td>{{ $racer->created_at->format('Y-m-d') }}</td>
+                            {{-- <td>{{ $racer->created_at->format('Y-m-d') }}</td> --}}
                             <td>
                                 <div class="btn-group" role="group">
                                     <a href="{{ route('admin.racers.show', $racer->id) }}" class="btn btn-sm btn-info"
                                         title="View">
-                                        <i class="fas fa-eye"></i>
+                                        <i class="fas fa-eye"></i> Details
                                     </a>
-                                    <a href="{{ route('admin.racers.edit', $racer->id) }}" class="btn btn-sm btn-warning"
+                                    <a href="{{ route('admin.racers.edit', $racer->id) }}" class="btn btn-sm btn-warning ml-2"
                                         title="Edit">
-                                        <i class="fas fa-edit"></i>
+                                        <i class="fas fa-edit"></i> Edit
                                     </a>
                                     <form action="{{ route('admin.racers.destroy', $racer->id) }}" method="POST"
-                                        class="d-inline"
+                                        class="d-inline ml-2"
                                         onsubmit="return confirm('DELETE RACER PERMANENTLY?\n\nCannot delete if racer is participating in tournaments.\n\nAre you sure?');">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-sm btn-danger" title="Delete Racer">
-                                            <i class="fas fa-trash"></i>
+                                            <i class="fas fa-trash"></i> Delete
                                         </button>
                                     </form>
                                 </div>

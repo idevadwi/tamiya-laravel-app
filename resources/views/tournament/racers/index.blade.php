@@ -70,14 +70,39 @@
         </div>
     </div>
     <div class="card-body">
+        @php
+            $sortIcon = function ($col) use ($sort, $direction) {
+                if ($sort === $col) {
+                    return $direction === 'asc' ? ' <i class="fas fa-sort-up"></i>' : ' <i class="fas fa-sort-down"></i>';
+                }
+                return ' <i class="fas fa-sort text-muted"></i>';
+            };
+            $sortDir = fn ($col) => ($sort === $col && $direction === 'asc') ? 'desc' : 'asc';
+            $sortUrl = fn ($col) => route('tournament.racers.index', array_merge(
+                request()->except(['sort', 'direction', 'page']),
+                ['sort' => $col, 'direction' => $sortDir($col)]
+            ));
+        @endphp
         <div class="table-responsive">
             <table class="table table-bordered table-striped table-hover">
                 <thead>
                     <tr>
-                        <th>Racer Name</th>
-                        <th>Team</th>
-                        <th>Cards</th>
-                        <th>Created At</th>
+                        <th>
+                            <a href="{{ $sortUrl('racer_name') }}" class="text-dark text-decoration-none">
+                                Racer Name{!! $sortIcon('racer_name') !!}
+                            </a>
+                        </th>
+                        <th>
+                            <a href="{{ $sortUrl('team_name') }}" class="text-dark text-decoration-none">
+                                Team{!! $sortIcon('team_name') !!}
+                            </a>
+                        </th>
+                        <th>
+                            <a href="{{ $sortUrl('cards_count') }}" class="text-dark text-decoration-none">
+                                Cards{!! $sortIcon('cards_count') !!}
+                            </a>
+                        </th>
+                        {{-- <th>Created At</th> --}}
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -99,24 +124,24 @@
                                     <span class="text-muted">-</span>
                                 @endforelse
                             </td>
-                            <td>{{ $racer->created_at->format('Y-m-d H:i') }}</td>
+                            {{-- <td>{{ $racer->created_at->format('Y-m-d H:i') }}</td> --}}
                             <td>
                                 <div class="btn-group" role="group">
                                     <a href="{{ route('tournament.racers.show', $racer->id) }}" class="btn btn-sm btn-info"
                                         title="View">
-                                        <i class="fas fa-eye"></i>
+                                        <i class="fas fa-eye"></i> Detail
                                     </a>
                                     <a href="{{ route('tournament.racers.edit', $racer->id) }}"
-                                        class="btn btn-sm btn-warning" title="Edit">
-                                        <i class="fas fa-edit"></i>
+                                        class="btn btn-sm btn-warning ml-2" title="Edit">
+                                        <i class="fas fa-edit"></i> Edit
                                     </a>
                                     <form action="{{ route('tournament.racers.destroy', $racer->id) }}" method="POST"
-                                        class="d-inline"
+                                        class="d-inline ml-2"
                                         onsubmit="return confirm('Are you sure you want to delete this racer?');">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-sm btn-danger" title="Delete">
-                                            <i class="fas fa-trash"></i>
+                                            <i class="fas fa-trash"></i> Delete
                                         </button>
                                     </form>
                                 </div>
@@ -140,6 +165,13 @@
         </div>
     @endif
 </div>
+@stop
+
+@section('css')
+<style>
+    thead th a { white-space: nowrap; }
+    thead th a:hover { text-decoration: none; opacity: 0.8; }
+</style>
 @stop
 
 @section('js')

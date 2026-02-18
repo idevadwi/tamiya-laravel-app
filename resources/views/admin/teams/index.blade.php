@@ -63,7 +63,7 @@
                         <th>Team Name</th>
                         <th>Total Racers</th>
                         <th>Tournaments Participated</th>
-                        <th>Created At</th>
+                        {{-- <th>Created At</th> --}}
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -77,24 +77,24 @@
                             <td>
                                 <span class="badge badge-secondary">{{ $team->tournament_participants_count }}</span>
                             </td>
-                            <td>{{ $team->created_at->format('Y-m-d H:i') }}</td>
+                            {{-- <td>{{ $team->created_at->format('Y-m-d H:i') }}</td> --}}
                             <td>
                                 <div class="btn-group" role="group">
                                     <a href="{{ route('admin.teams.show', $team->id) }}" class="btn btn-sm btn-info"
                                         title="View">
-                                        <i class="fas fa-eye"></i>
+                                        <i class="fas fa-eye"></i> Details
                                     </a>
-                                    <a href="{{ route('admin.teams.edit', $team->id) }}" class="btn btn-sm btn-warning"
+                                    <a href="{{ route('admin.teams.edit', $team->id) }}" class="btn btn-sm btn-warning ml-2"
                                         title="Edit">
-                                        <i class="fas fa-edit"></i>
+                                        <i class="fas fa-edit"></i> Edit
                                     </a>
                                     <form action="{{ route('admin.teams.destroy', $team->id) }}" method="POST"
-                                        class="d-inline"
+                                        class="d-inline ml-2"
                                         onsubmit="return confirm('DELETE TEAM PERMANENTLY?\n\nCannot delete if the team is participating in tournaments.\n\nAre you sure?');">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-sm btn-danger" title="Delete Team">
-                                            <i class="fas fa-trash"></i>
+                                            <i class="fas fa-trash"></i> Delete
                                         </button>
                                     </form>
                                 </div>

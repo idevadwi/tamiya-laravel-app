@@ -24,30 +24,40 @@ class TeamController extends Controller
                 ->with('error', 'Please select a tournament first.');
         }
 
+        // Validate sort parameters
+        $allowedSorts = ['team_name', 'racers_count', 'active_racers_count'];
+        $sort = in_array($request->sort, $allowedSorts) ? $request->sort : 'team_name';
+        $direction = $request->direction === 'desc' ? 'desc' : 'asc';
+
+        // Subquery to compute active racer count per team for this tournament
+        $activeCountSubquery = \DB::table('tournament_racer_participants')
+            ->selectRaw('COUNT(*)')
+            ->whereColumn('team_id', 'teams.id')
+            ->where('tournament_id', $tournament->id)
+            ->where('is_active', true);
+
         // Build query for teams in the active tournament
         $query = Team::whereHas('tournamentParticipants', function ($q) use ($tournament) {
             $q->where('tournament_id', $tournament->id);
-        })->withCount('racers');
+        })
+        ->withCount('racers')
+        ->addSelect(['active_racers_count' => $activeCountSubquery]);
 
         // Filter by team name search
         if ($request->has('search') && $request->search) {
             $query->where('team_name', 'like', '%' . $request->search . '%');
         }
 
-        $teams = $query->latest()->paginate(10);
+        $teams = $query->orderBy($sort, $direction)->paginate(10);
         $teams->appends($request->query());
 
-        // Get active racer counts for each team in this tournament
+        // Use the precomputed active_racers_count from the subquery
         $activeRacerCounts = [];
         foreach ($teams as $team) {
-            $activeCount = TournamentRacerParticipant::where('tournament_id', $tournament->id)
-                ->where('team_id', $team->id)
-                ->where('is_active', true)
-                ->count();
-            $activeRacerCounts[$team->id] = $activeCount;
+            $activeRacerCounts[$team->id] = $team->active_racers_count ?? 0;
         }
 
-        return view('tournament.teams.index', compact('teams', 'tournament', 'activeRacerCounts'));
+        return view('tournament.teams.index', compact('teams', 'tournament', 'activeRacerCounts', 'sort', 'direction'));
     }
 
     /**

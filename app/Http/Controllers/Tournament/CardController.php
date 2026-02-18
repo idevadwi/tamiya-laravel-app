@@ -25,41 +25,54 @@ class CardController extends Controller
                 ->with('error', 'Please select a tournament first.');
         }
 
+        // Validate sort parameters
+        $allowedSorts = ['card_no', 'racer_name', 'team_name', 'status'];
+        $sort = in_array($request->sort, $allowedSorts) ? $request->sort : 'card_no';
+        $direction = $request->direction === 'desc' ? 'desc' : 'asc';
+
+        // Map sort keys to actual columns
+        $sortColumn = match ($sort) {
+            'racer_name' => 'racers.racer_name',
+            'team_name'  => 'teams.team_name',
+            'status'     => 'cards.status',
+            default      => 'cards.card_no',
+        };
+
         // Get racers participating in this tournament
         $racerIds = TournamentRacerParticipant::where('tournament_id', $tournament->id)
             ->pluck('racer_id');
 
-        // Build query for cards belonging to these racers
-        $query = Card::whereIn('racer_id', $racerIds)
-            ->with(['racer.team']);
-
-        // Filter by active racers status via relation
-        // We can show cards for active vs inactive racers if needed
+        // Build query for cards belonging to these racers (joins for sortable relations)
+        $query = Card::whereIn('cards.racer_id', $racerIds)
+            ->with(['racer.team'])
+            ->leftJoin('racers', 'cards.racer_id', '=', 'racers.id')
+            ->leftJoin('teams', 'racers.team_id', '=', 'teams.id')
+            ->select('cards.*');
 
         // Filter by team if provided
         if ($request->has('team_id') && $request->team_id) {
             $teamRacerIds = TournamentRacerParticipant::where('tournament_id', $tournament->id)
                 ->where('team_id', $request->team_id)
                 ->pluck('racer_id');
-            $query->whereIn('racer_id', $teamRacerIds);
+            $query->whereIn('cards.racer_id', $teamRacerIds);
         }
 
         // Filter by racer if provided
         if ($request->has('racer_id') && $request->racer_id) {
-            $query->where('racer_id', $request->racer_id);
+            $query->where('cards.racer_id', $request->racer_id);
         }
 
         // Filter by status if provided
         if ($request->has('status') && $request->status) {
-            $query->where('status', $request->status);
+            $query->where('cards.status', $request->status);
         }
 
         // Filter by card code search
         if ($request->has('search') && $request->search) {
-            $query->where('card_code', 'like', '%' . $request->search . '%');
+            $query->where('cards.card_no', 'like', '%' . $request->search . '%');
         }
 
-        $cards = $query->latest()->paginate(10);
+        $cards = $query->orderBy($sortColumn, $direction)->paginate(10);
         $cards->appends($request->query());
 
         // Get teams in this tournament for filter dropdown
@@ -73,7 +86,7 @@ class CardController extends Controller
             ->orderBy('racer_name')
             ->get();
 
-        return view('tournament.cards.index', compact('cards', 'tournament', 'racers', 'teams'));
+        return view('tournament.cards.index', compact('cards', 'tournament', 'racers', 'teams', 'sort', 'direction'));
     }
 
     /**

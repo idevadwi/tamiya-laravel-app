@@ -87,16 +87,45 @@
         </div>
     </div>
     <div class="card-body">
+        @php
+            $sortIcon = function ($col) use ($sort, $direction) {
+                if ($sort === $col) {
+                    return $direction === 'asc' ? ' <i class="fas fa-sort-up"></i>' : ' <i class="fas fa-sort-down"></i>';
+                }
+                return ' <i class="fas fa-sort text-muted"></i>';
+            };
+            $sortDir = fn ($col) => ($sort === $col && $direction === 'asc') ? 'desc' : 'asc';
+            $sortUrl = fn ($col) => route('tournament.cards.index', array_merge(
+                request()->except(['sort', 'direction', 'page']),
+                ['sort' => $col, 'direction' => $sortDir($col)]
+            ));
+        @endphp
         <div class="table-responsive">
             <table class="table table-bordered table-striped table-hover">
                 <thead>
                     <tr>
-                        <th>Card No</th>
-                        <th>Racer</th>
-                        <th>Team</th>
-                        <th>Status</th>
-                        <th>Coupons</th>
-                        <th>Created At</th>
+                        <th>
+                            <a href="{{ $sortUrl('card_no') }}" class="text-dark text-decoration-none">
+                                Card No{!! $sortIcon('card_no') !!}
+                            </a>
+                        </th>
+                        <th>
+                            <a href="{{ $sortUrl('racer_name') }}" class="text-dark text-decoration-none">
+                                Racer{!! $sortIcon('racer_name') !!}
+                            </a>
+                        </th>
+                        <th>
+                            <a href="{{ $sortUrl('team_name') }}" class="text-dark text-decoration-none">
+                                Team{!! $sortIcon('team_name') !!}
+                            </a>
+                        </th>
+                        <th>
+                            <a href="{{ $sortUrl('status') }}" class="text-dark text-decoration-none">
+                                Status{!! $sortIcon('status') !!}
+                            </a>
+                        </th>
+                        {{-- <th>Coupons</th> --}}
+                        {{-- <th>Created At</th> --}}
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -129,25 +158,25 @@
                                     <span class="badge badge-secondary">{{ $card->status }}</span>
                                 @endif
                             </td>
-                            <td>{{ $card->coupon }}</td>
-                            <td>{{ $card->created_at->format('Y-m-d H:i') }}</td>
+                            {{-- <td>{{ $card->coupon }}</td> --}}
+                            {{-- <td>{{ $card->created_at->format('Y-m-d H:i') }}</td> --}}
                             <td>
                                 <div class="btn-group" role="group">
                                     <a href="{{ route('tournament.cards.show', $card->id) }}" class="btn btn-sm btn-info"
                                         title="View">
-                                        <i class="fas fa-eye"></i>
+                                        <i class="fas fa-eye"></i> Detail
                                     </a>
-                                    <a href="{{ route('tournament.cards.edit', $card->id) }}" class="btn btn-sm btn-warning"
+                                    <a href="{{ route('tournament.cards.edit', $card->id) }}" class="btn btn-sm btn-warning ml-2"
                                         title="Edit">
-                                        <i class="fas fa-edit"></i>
+                                        <i class="fas fa-edit"></i> Edit
                                     </a>
                                     <form action="{{ route('tournament.cards.destroy', $card->id) }}" method="POST"
-                                        class="d-inline"
+                                        class="d-inline ml-2"
                                         onsubmit="return confirm('Are you sure you want to delete this card?');">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-sm btn-danger" title="Delete">
-                                            <i class="fas fa-trash"></i>
+                                            <i class="fas fa-trash"></i> Delete
                                         </button>
                                     </form>
                                 </div>
@@ -174,6 +203,10 @@
 @stop
 
 @section('css')
+<style>
+    thead th a { white-space: nowrap; }
+    thead th a:hover { text-decoration: none; opacity: 0.8; }
+</style>
 @stop
 
 @section('js')

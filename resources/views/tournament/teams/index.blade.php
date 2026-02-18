@@ -56,13 +56,38 @@
         </div>
     </div>
     <div class="card-body">
+        @php
+            $sortIcon = function ($col) use ($sort, $direction) {
+                if ($sort === $col) {
+                    return $direction === 'asc' ? ' <i class="fas fa-sort-up"></i>' : ' <i class="fas fa-sort-down"></i>';
+                }
+                return ' <i class="fas fa-sort text-muted"></i>';
+            };
+            $sortDir = fn ($col) => ($sort === $col && $direction === 'asc') ? 'desc' : 'asc';
+            $sortUrl = fn ($col) => route('tournament.teams.index', array_merge(
+                request()->except(['sort', 'direction', 'page']),
+                ['sort' => $col, 'direction' => $sortDir($col)]
+            ));
+        @endphp
         <div class="table-responsive">
             <table class="table table-bordered table-striped table-hover">
                 <thead>
                     <tr>
-                        <th>Team Name</th>
-                        <th>Total Racers</th>
-                        <th>Active Racers</th>
+                        <th>
+                            <a href="{{ $sortUrl('team_name') }}" class="text-dark text-decoration-none">
+                                Team Name{!! $sortIcon('team_name') !!}
+                            </a>
+                        </th>
+                        <th>
+                            <a href="{{ $sortUrl('racers_count') }}" class="text-dark text-decoration-none">
+                                Total Racers{!! $sortIcon('racers_count') !!}
+                            </a>
+                        </th>
+                        <th>
+                            <a href="{{ $sortUrl('active_racers_count') }}" class="text-dark text-decoration-none">
+                                Active Racers{!! $sortIcon('active_racers_count') !!}
+                            </a>
+                        </th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -114,6 +139,10 @@
 @stop
 
 @section('css')
+<style>
+    thead th a { white-space: nowrap; }
+    thead th a:hover { text-decoration: none; opacity: 0.8; }
+</style>
 @stop
 
 @section('js')

@@ -26,6 +26,18 @@ class RacerController extends Controller
                 ->with('error', 'Please select a tournament first.');
         }
 
+        // Validate sort parameters
+        $allowedSorts = ['racer_name', 'team_name', 'cards_count'];
+        $sort = in_array($request->sort, $allowedSorts) ? $request->sort : 'racer_name';
+        $direction = $request->direction === 'desc' ? 'desc' : 'asc';
+
+        // Map sort keys to actual columns
+        $sortColumn = match ($sort) {
+            'team_name'  => 'teams.team_name',
+            'cards_count' => 'cards_count',
+            default      => 'racers.racer_name',
+        };
+
         // Get racers participating in this tournament
         $query = Racer::whereHas('tournamentRacerParticipants', function ($q) use ($tournament) {
             $q->where('tournament_id', $tournament->id);
@@ -35,7 +47,10 @@ class RacerController extends Controller
                     'tournamentRacerParticipants' => function ($q) use ($tournament) {
                         $q->where('tournament_id', $tournament->id);
                     }
-                ])->withCount('cards');
+                ])
+        ->withCount('cards')
+        ->leftJoin('teams', 'racers.team_id', '=', 'teams.id')
+        ->select('racers.*');
 
         // Filter by active status (default: show all participants)
         if ($request->has('status')) {
@@ -54,15 +69,15 @@ class RacerController extends Controller
 
         // Filter by team if provided
         if ($request->has('team_id') && $request->team_id) {
-            $query->where('team_id', $request->team_id);
+            $query->where('racers.team_id', $request->team_id);
         }
 
         // Filter by racer name search
         if ($request->has('search') && $request->search) {
-            $query->where('racer_name', 'like', '%' . $request->search . '%');
+            $query->where('racers.racer_name', 'like', '%' . $request->search . '%');
         }
 
-        $racers = $query->latest()->paginate(10);
+        $racers = $query->orderBy($sortColumn, $direction)->paginate(10);
         $racers->appends($request->query());
 
         // Get teams in this tournament for filter dropdown
@@ -70,7 +85,7 @@ class RacerController extends Controller
             $q->where('tournament_id', $tournament->id);
         })->orderBy('team_name')->get();
 
-        return view('tournament.racers.index', compact('racers', 'tournament', 'teams'));
+        return view('tournament.racers.index', compact('racers', 'tournament', 'teams', 'sort', 'direction'));
     }
 
     /**

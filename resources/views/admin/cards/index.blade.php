@@ -81,7 +81,7 @@
                             <th>Racer</th>
                             <th>Team</th>
                             <th>Status</th>
-                            <th>Coupons</th>
+                            {{-- <th>Coupons</th> --}}
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -119,7 +119,7 @@
                                         {{ $card->status }}
                                     </span>
                                 </td>
-                                <td>{{ $card->coupon }}</td>
+                                {{-- <td>{{ $card->coupon }}</td> --}}
                                 <td>
                                     <div class="btn-group" role="group">
                                         <a href="{{ route('admin.cards.edit', $card->id) }}" 
