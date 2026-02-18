@@ -55,7 +55,7 @@
                         <input type="text" 
                                name="search" 
                                class="form-control" 
-                               placeholder="Search card code..." 
+                               placeholder="Search card no / code..."
                                value="{{ request('search') }}">
                         <div class="input-group-append">
                             <button type="submit" class="btn btn-default">
@@ -76,6 +76,7 @@
                 <table class="table table-bordered table-striped table-hover">
                     <thead>
                         <tr>
+                            <th>Card No</th>
                             <th>Card Code</th>
                             <th>Racer</th>
                             <th>Team</th>
@@ -87,6 +88,13 @@
                     <tbody>
                         @forelse($cards as $card)
                             <tr>
+                                <td>
+                                    @if($card->card_no)
+                                        <span class="badge badge-secondary">{{ $card->card_no }}</span>
+                                    @else
+                                        <span class="text-muted">-</span>
+                                    @endif
+                                </td>
                                 <td>{{ $card->card_code }}</td>
                                 <td>
                                     @if($card->racer)
@@ -133,7 +141,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="text-center">
+                                <td colspan="7" class="text-center">
                                     No cards found. 
                                     <a href="{{ route('admin.cards.create') }}">Create one now</a>.
                                 </td>

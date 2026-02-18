@@ -20,7 +20,10 @@ class MasterCardController extends Controller
 
         // Filter by card code search
         if ($request->has('search') && $request->search) {
-            $query->where('card_code', 'like', '%' . $request->search . '%');
+            $query->where(function ($q) use ($request) {
+                $q->where('card_code', 'like', '%' . $request->search . '%')
+                  ->orWhere('card_no', 'like', '%' . $request->search . '%');
+            });
         }
 
         // Filter by status
@@ -60,6 +63,7 @@ class MasterCardController extends Controller
     {
         $validated = $request->validate([
             'card_code' => 'required|string|max:255|unique:cards,card_code',
+            'card_no' => 'nullable|string|max:5|unique:cards,card_no',
             'racer_id' => 'nullable|exists:racers,id',
             'status' => 'required|in:ACTIVE,LOST,BANNED',
             'coupon' => 'nullable|integer|min:0',
@@ -69,6 +73,7 @@ class MasterCardController extends Controller
         $card = Card::create([
             'id' => Str::uuid(),
             'card_code' => $validated['card_code'],
+            'card_no' => $validated['card_no'] ?? null,
             'racer_id' => $validated['racer_id'] ?? null,
             'status' => $validated['status'],
             'coupon' => $validated['coupon'] ?? 0,
@@ -107,6 +112,7 @@ class MasterCardController extends Controller
     {
         $validated = $request->validate([
             'card_code' => 'required|string|max:255|unique:cards,card_code,' . $card->id,
+            'card_no' => 'nullable|string|max:5|unique:cards,card_no,' . $card->id,
             'racer_id' => 'nullable|exists:racers,id',
             'status' => 'required|in:ACTIVE,LOST,BANNED',
             'coupon' => 'nullable|integer|min:0',

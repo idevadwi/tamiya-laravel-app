@@ -22,28 +22,39 @@
     <form action="{{ route('tournament.cards.store') }}" method="POST">
         @csrf
         <div class="card-body">
+            @if(session('error'))
+                <div class="alert alert-danger">{{ session('error') }}</div>
+            @endif
+
             <div class="row">
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label for="card_code">Card Code <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control @error('card_code') is-invalid @enderror" id="card_code"
-                            name="card_code" value="{{ old('card_code') }}" placeholder="Enter card code" required>
-                        @error('card_code')
+                        <label for="card_id">Card No <span class="text-danger">*</span></label>
+                        <select class="form-control select2 @error('card_id') is-invalid @enderror" id="card_id"
+                            name="card_id" required>
+                            <option value="">-- Select a card --</option>
+                            @foreach($availableCards as $card)
+                                <option value="{{ $card->id }}" {{ old('card_id') == $card->id ? 'selected' : '' }}>
+                                    #{{ $card->card_no }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('card_id')
                             <span class="invalid-feedback" role="alert">
                                 <strong>{{ $message }}</strong>
                             </span>
                         @enderror
                         <small class="form-text text-muted">
-                            Unique identifier for the card
+                            Only unassigned cards are shown
                         </small>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label for="racer_id">Racer</label>
-                        <select class="form-control @error('racer_id') is-invalid @enderror" id="racer_id"
-                            name="racer_id">
-                            <option value="">Unassigned</option>
+                        <label for="racer_id">Racer <span class="text-danger">*</span></label>
+                        <select class="form-control select2 @error('racer_id') is-invalid @enderror" id="racer_id"
+                            name="racer_id" required>
+                            <option value="">-- Select a racer --</option>
                             @foreach($racers as $racer)
                                 <option value="{{ $racer->id }}" {{ old('racer_id', $selectedRacerId) == $racer->id ? 'selected' : '' }}>
                                     {{ $racer->racer_name }}
@@ -59,39 +70,8 @@
                             </span>
                         @enderror
                         <small class="form-text text-muted">
-                            Select a racer from the active tournament (optional)
+                            Select a racer from the active tournament
                         </small>
-                    </div>
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="col-md-4">
-                    <div class="form-group">
-                        <label for="status">Status</label>
-                        <select class="form-control @error('status') is-invalid @enderror" id="status" name="status">
-                            <option value="ACTIVE" {{ old('status', 'ACTIVE') == 'ACTIVE' ? 'selected' : '' }}>ACTIVE
-                            </option>
-                            <option value="LOST" {{ old('status') == 'LOST' ? 'selected' : '' }}>LOST</option>
-                            <option value="BANNED" {{ old('status') == 'BANNED' ? 'selected' : '' }}>BANNED</option>
-                        </select>
-                        @error('status')
-                            <span class="invalid-feedback" role="alert">
-                                <strong>{{ $message }}</strong>
-                            </span>
-                        @enderror
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="form-group">
-                        <label for="coupon">Coupons</label>
-                        <input type="number" class="form-control @error('coupon') is-invalid @enderror" id="coupon"
-                            name="coupon" value="{{ old('coupon', 0) }}" min="0">
-                        @error('coupon')
-                            <span class="invalid-feedback" role="alert">
-                                <strong>{{ $message }}</strong>
-                            </span>
-                        @enderror
                     </div>
                 </div>
             </div>
@@ -112,4 +92,11 @@
 @stop
 
 @section('js')
+<script>
+    $(document).ready(function () {
+        $('.select2').select2({
+            theme: 'bootstrap4'
+        });
+    });
+</script>
 @stop

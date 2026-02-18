@@ -57,9 +57,20 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="card_code">Initial Card Code (Optional)</label>
-                        <input type="text" class="form-control @error('card_code') is-invalid @enderror" id="card_code"
-                            name="card_code" placeholder="Scan or enter card code" value="{{ old('card_code') }}">
+                        <label for="card_id">Assign Card (Optional)</label>
+                        <select class="form-control select2 @error('card_id') is-invalid @enderror" id="card_id"
+                            name="card_id">
+                            <option value="">-- No card assigned --</option>
+                            @foreach($cards as $card)
+                                <option value="{{ $card->id }}" {{ old('card_id') == $card->id ? 'selected' : '' }}>
+                                    #{{ $card->card_no }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('card_id')
+                            <span class="invalid-feedback">{{ $message }}</span>
+                        @enderror
+                        <small class="form-text text-muted">Select a card by Card No. Only unassigned cards are shown.</small>
                     </div>
                 </div>
 

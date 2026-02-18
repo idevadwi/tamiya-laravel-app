@@ -30,9 +30,21 @@
                     @endif
 
                     <div class="form-group">
-                        <label for="card_code">Card Code</label>
+                        <label for="card_no">Card No <small class="text-muted">(printed on card)</small></label>
+                        <input type="text" class="form-control @error('card_no') is-invalid @enderror" id="card_no"
+                            name="card_no" value="{{ old('card_no', $card->card_no) }}" maxlength="5">
+                        @error('card_no')
+                            <span class="invalid-feedback">{{ $message }}</span>
+                        @enderror
+                    </div>
+
+                    <div class="form-group">
+                        <label for="card_code">Card Code <span class="text-danger">*</span> <small class="text-muted">(RFID UID)</small></label>
                         <input type="text" class="form-control @error('card_code') is-invalid @enderror" id="card_code"
                             name="card_code" value="{{ old('card_code', $card->card_code) }}" required>
+                        @error('card_code')
+                            <span class="invalid-feedback">{{ $message }}</span>
+                        @enderror
                     </div>
 
                     <div class="form-group">

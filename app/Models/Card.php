@@ -11,7 +11,7 @@ class Card extends Model
 
     public $incrementing = false;
     protected $keyType = 'string';
-    protected $fillable = ['card_code', 'racer_id', 'coupon', 'status', 'created_by', 'updated_by'];
+    protected $fillable = ['card_code', 'card_no', 'racer_id', 'coupon', 'status', 'created_by', 'updated_by'];
 
     public function racer()
     {

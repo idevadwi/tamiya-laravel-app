@@ -46,6 +46,7 @@ class CardController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'card_code' => 'required|string|unique:cards,card_code',
+            'card_no'   => 'nullable|string|max:5|unique:cards,card_no',
             'racer_id'  => 'nullable|exists:racers,id',
             'coupon'    => 'nullable|integer|min:0',
             'status'    => 'nullable|in:ACTIVE,LOST,BANNED',
@@ -62,6 +63,7 @@ class CardController extends Controller
         $card = Card::create([
             'id'        => Str::uuid(),
             'card_code' => $request->card_code,
+            'card_no'   => $request->card_no,
             'racer_id'  => $request->racer_id,
             'coupon'    => $request->coupon ?? 0,
             'status'    => $request->status ?? 'ACTIVE',
@@ -89,6 +91,7 @@ class CardController extends Controller
 
         $validator = Validator::make($request->all(), [
             'card_code' => 'sometimes|string|unique:cards,card_code,' . $card->id,
+            'card_no'   => 'nullable|string|max:5|unique:cards,card_no,' . $card->id,
             'racer_id'  => 'nullable|exists:racers,id',
             'coupon'    => 'nullable|integer|min:0',
             'status'    => 'nullable|in:ACTIVE,LOST,BANNED',
@@ -104,6 +107,7 @@ class CardController extends Controller
 
         $card->update([
             'card_code' => $request->card_code ?? $card->card_code,
+            'card_no'   => array_key_exists('card_no', $request->all()) ? $request->card_no : $card->card_no,
             'racer_id'  => $request->racer_id,
             'coupon'    => $request->coupon ?? $card->coupon,
             'status'    => $request->status ?? $card->status,

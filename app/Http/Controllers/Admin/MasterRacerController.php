@@ -47,7 +47,13 @@ class MasterRacerController extends Controller
         // Get all teams for selection
         $teams = Team::orderBy('team_name')->get();
 
-        return view('admin.racers.create', compact('teams'));
+        // Get unassigned cards for selection (ordered by card_no)
+        $cards = Card::whereNull('racer_id')
+            ->whereNotNull('card_no')
+            ->orderBy('card_no')
+            ->get();
+
+        return view('admin.racers.create', compact('teams', 'cards'));
     }
 
     /**
@@ -59,7 +65,7 @@ class MasterRacerController extends Controller
             'racer_name' => 'required|string|max:255',
             'team_id' => 'required|exists:teams,id',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'card_code' => 'nullable|string|max:255|unique:cards,card_code',
+            'card_id' => 'nullable|exists:cards,id',
         ]);
 
         // Handle image upload
@@ -77,16 +83,14 @@ class MasterRacerController extends Controller
             'created_by' => auth()->id(),
         ]);
 
-        // Create card if card_code provided
-        if (!empty($validated['card_code'])) {
-            Card::create([
-                'id' => Str::uuid(),
-                'card_code' => $validated['card_code'],
-                'racer_id' => $racer->id,
-                'status' => 'ACTIVE',
-                'coupon' => 0,
-                'created_by' => auth()->id(),
-            ]);
+        // Assign selected card to racer
+        if (!empty($validated['card_id'])) {
+            Card::where('id', $validated['card_id'])
+                ->whereNull('racer_id')
+                ->update([
+                    'racer_id' => $racer->id,
+                    'updated_by' => auth()->id(),
+                ]);
         }
 
         return redirect()->route('admin.racers.show', $racer->id)

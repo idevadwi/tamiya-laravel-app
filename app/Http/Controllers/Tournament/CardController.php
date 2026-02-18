@@ -100,7 +100,13 @@ class CardController extends Controller
         // Pre-select racer if provided via query parameter
         $selectedRacerId = $request->get('racer_id');
 
-        return view('tournament.cards.create', compact('tournament', 'racers', 'selectedRacerId'));
+        // Get unassigned cards that have a card_no set (available for assignment)
+        $availableCards = Card::whereNull('racer_id')
+            ->whereNotNull('card_no')
+            ->orderBy('card_no')
+            ->get();
+
+        return view('tournament.cards.create', compact('tournament', 'racers', 'selectedRacerId', 'availableCards'));
     }
 
     /**
@@ -129,23 +135,26 @@ class CardController extends Controller
         }
 
         $validated = $request->validate([
-            'card_code' => 'required|string|max:255|unique:cards,card_code',
-            'racer_id' => 'required|uuid|exists:racers,id', // Must act assign to a racer in tournament mode
-            'coupon' => 'nullable|integer|min:0',
-            'status' => 'nullable|in:ACTIVE,LOST,BANNED',
+            'card_id' => 'required|exists:cards,id',
+            'racer_id' => 'required|uuid|exists:racers,id',
         ]);
 
-        $card = Card::create([
-            'id' => Str::uuid(),
-            'card_code' => $validated['card_code'],
+        $card = Card::find($validated['card_id']);
+
+        // Ensure the card is still unassigned
+        if ($card->racer_id !== null) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'The selected card is already assigned to another racer.');
+        }
+
+        $card->update([
             'racer_id' => $validated['racer_id'],
-            'coupon' => $validated['coupon'] ?? 0,
-            'status' => $validated['status'] ?? 'ACTIVE',
-            'created_by' => auth()->id(),
+            'updated_by' => auth()->id(),
         ]);
 
         return redirect()->route('tournament.cards.index')
-            ->with('success', 'Card created successfully.');
+            ->with('success', 'Card assigned successfully.');
     }
 
     /**

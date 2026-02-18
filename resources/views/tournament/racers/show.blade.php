@@ -108,6 +108,7 @@
                         <table class="table table-bordered table-striped table-hover">
                             <thead>
                                 <tr>
+                                    <th>Card No</th>
                                     <th>Card Code</th>
                                     <th>Status</th>
                                     <th>Coupons</th>
@@ -118,6 +119,13 @@
                             <tbody>
                                 @foreach($cards as $card)
                                     <tr>
+                                        <td>
+                                            @if($card->card_no)
+                                                <span class="badge badge-secondary">#{{ $card->card_no }}</span>
+                                            @else
+                                                <span class="text-muted">-</span>
+                                            @endif
+                                        </td>
                                         <td><code>{{ $card->card_code }}</code></td>
                                         <td>
                                             @if($card->status === 'ACTIVE')
