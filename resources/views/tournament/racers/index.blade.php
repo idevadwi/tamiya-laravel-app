@@ -74,7 +74,6 @@
             <table class="table table-bordered table-striped table-hover">
                 <thead>
                     <tr>
-                        <th>Image</th>
                         <th>Racer Name</th>
                         <th>Team</th>
                         <th>Cards</th>
@@ -85,14 +84,6 @@
                 <tbody>
                     @forelse($racers as $racer)
                         <tr>
-                            <td>
-                                @if($racer->image_url)
-                                    <img src="{{ $racer->image_url }}" alt="{{ $racer->racer_name }}"
-                                        class="img-circle img-size-32">
-                                @else
-                                    <span class="text-muted">No image</span>
-                                @endif
-                            </td>
                             <td>{{ $racer->racer_name }}</td>
                             <td>
                                 @if($racer->team)
@@ -102,7 +93,11 @@
                                 @endif
                             </td>
                             <td>
-                                <span class="badge badge-warning">{{ $racer->cards_count }}</span>
+                                @forelse($racer->cards as $card)
+                                    <span class="badge badge-warning">{{ $card->card_no }}</span>
+                                @empty
+                                    <span class="text-muted">-</span>
+                                @endforelse
                             </td>
                             <td>{{ $racer->created_at->format('Y-m-d H:i') }}</td>
                             <td>
@@ -129,7 +124,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="text-center">
+                            <td colspan="5" class="text-center">
                                 No racers found in this tournament.
                                 <a href="{{ route('tournament.racers.create') }}">Create one now</a>.
                             </td>

@@ -29,7 +29,11 @@
             <div class="card-body">
                 <table class="table table-bordered">
                     <tr>
-                        <th width="40%">Card Code</th>
+                        <th width="40%">Card No</th>
+                        <td>{{ $card->card_no }}</td>
+                    </tr>
+                    <tr>
+                        <th>Card Code</th>
                         <td><code>{{ $card->card_code }}</code></td>
                     </tr>
                     <tr>

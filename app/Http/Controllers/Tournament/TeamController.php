@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Tournament;
 
 use App\Http\Controllers\Controller;
+use App\Models\Card;
 use App\Models\Team;
 use App\Models\TournamentParticipant;
 use App\Models\TournamentRacerParticipant;
@@ -209,7 +210,13 @@ class TeamController extends Controller
             ->pluck('racer_id')
             ->toArray();
 
-        return view('tournament.teams.show', compact('team', 'tournament', 'racers', 'activeRacerIds'));
+        // Get cards with card_no that are not yet assigned to any racer
+        $availableCards = Card::whereNotNull('card_no')
+            ->whereNull('racer_id')
+            ->orderBy('card_no')
+            ->get();
+
+        return view('tournament.teams.show', compact('team', 'tournament', 'racers', 'activeRacerIds', 'availableCards'));
     }
 
     /**

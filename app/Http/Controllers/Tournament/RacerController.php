@@ -167,7 +167,7 @@ class RacerController extends Controller
             'team_id' => 'required|exists:teams,id',
             'racer_name' => 'required|string|max:255',
             'image' => 'nullable|image|max:2048',
-            'card_code' => 'nullable|string|unique:cards,card_code',
+            'card_id' => 'nullable|exists:cards,id',
         ]);
 
         // Check max racers limit
@@ -203,13 +203,11 @@ class RacerController extends Controller
                 'is_active' => true,
             ]);
 
-            // Handle Card
-            if ($request->card_code) {
-                Card::create([
-                    'card_code' => $request->card_code,
+            // Handle Card — assign existing card to this racer
+            if ($request->card_id) {
+                Card::where('id', $request->card_id)->update([
                     'racer_id' => $racer->id,
                     'status' => 'ACTIVE',
-                    'coupon' => 0,
                 ]);
             }
 
@@ -231,47 +229,25 @@ class RacerController extends Controller
 
         $request->validate([
             'racer_name' => 'required|string|max:255',
-            'card_code' => 'nullable|string',
             'card_id' => 'nullable|exists:cards,id',
+            'current_card_id' => 'nullable|exists:cards,id',
         ]);
 
         try {
             // Update racer name
             $racer->update(['racer_name' => $request->racer_name]);
 
-            // Handle Card Logic
-            if ($request->card_code) {
-                // Check if card code is taken by another card
-                $existingCard = Card::where('card_code', $request->card_code)
-                    ->where('id', '!=', $request->card_id)
-                    ->first();
+            // Unassign previous card if it changed
+            if ($request->current_card_id && $request->current_card_id !== $request->card_id) {
+                Card::where('id', $request->current_card_id)->update(['racer_id' => null]);
+            }
 
-                if ($existingCard) {
-                    return response()->json(['success' => false, 'message' => 'Card code already in use.'], 422);
-                }
-
-                if ($request->card_id) {
-                    // Update existing card
-                    $card = Card::find($request->card_id);
-                    $card->update(['card_code' => $request->card_code]);
-                } else {
-                    // Create new card
-                    Card::create([
-                        'card_code' => $request->card_code,
-                        'racer_id' => $racer->id,
-                        'status' => 'ACTIVE',
-                        'coupon' => 0,
-                    ]);
-                }
-            } else {
-                // If card code is empty but card_id exists, unassign or delete?
-                // The prompt says "remove card".
-                if ($request->card_id) {
-                    $card = Card::find($request->card_id);
-                    // Decide if we delete or just unassign. Let's unassign for safety, or delete if it's unused?
-                    // Given previous logic, let's just delete as cards are usually tied to racers here.
-                    $card->delete();
-                }
+            // Assign selected card to racer
+            if ($request->card_id) {
+                Card::where('id', $request->card_id)->update([
+                    'racer_id' => $racer->id,
+                    'status' => 'ACTIVE',
+                ]);
             }
 
             return response()->json(['success' => true, 'message' => 'Racer updated successfully!']);

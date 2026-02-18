@@ -107,7 +107,7 @@
                                             <div class="btn-group" role="group">
                                                 <button type="button" class="btn btn-sm btn-warning edit-racer-btn"
                                                     data-racer-id="{{ $racer->id }}" data-racer-name="{{ $racer->racer_name }}"
-                                                    data-card-code="{{ $racer->cards->first()->card_code ?? '' }}"
+                                                    data-card-no="{{ $racer->cards->first()->card_no ?? '' }}"
                                                     data-card-id="{{ $racer->cards->first()->id ?? '' }}" title="Edit Racer">
                                                     <i class="fas fa-edit"></i>
                                                 </button>
@@ -195,11 +195,14 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="card_code">Card Code</label>
-                        <input type="text" class="form-control" id="card_code" name="card_code"
-                            placeholder="Optional: Auto-assign card to racer" {{ !$canAddMore ? 'disabled' : '' }}>
-                        <small class="form-text text-muted">If provided, a card will be automatically created and
-                            assigned to this racer with ACTIVE status.</small>
+                        <label for="card_id">Card No</label>
+                        <select class="form-control" id="card_id" name="card_id" {{ !$canAddMore ? 'disabled' : '' }}>
+                            <option value="">-- No Card --</option>
+                            @foreach($availableCards as $card)
+                                <option value="{{ $card->id }}">{{ $card->card_no }}</option>
+                            @endforeach
+                        </select>
+                        <small class="form-text text-muted">Optional: Select an available card to assign to this racer.</small>
                         <div class="invalid-feedback"></div>
                     </div>
                 </div>
@@ -228,7 +231,7 @@
             <form id="editRacerForm">
                 @csrf
                 <input type="hidden" id="edit_racer_id" name="racer_id">
-                <input type="hidden" id="edit_card_id" name="card_id">
+                <input type="hidden" id="edit_current_card_id" name="current_card_id">
 
                 <div class="modal-body">
                     <div class="form-group">
@@ -238,12 +241,14 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="edit_card_code">Card Code</label>
-                        <input type="text" class="form-control" id="edit_card_code" name="card_code"
-                            placeholder="Enter card code">
-                        <small class="form-text text-muted">
-                            <span id="card-status-text"></span>
-                        </small>
+                        <label for="edit_card_id">Card No</label>
+                        <select class="form-control" id="edit_card_id" name="card_id">
+                            <option value="">-- No Card --</option>
+                            @foreach($availableCards as $card)
+                                <option value="{{ $card->id }}">{{ $card->card_no }}</option>
+                            @endforeach
+                        </select>
+                        <small class="form-text text-muted">Select a card to assign, or leave blank to unassign.</small>
                         <div class="invalid-feedback"></div>
                     </div>
                 </div>
@@ -471,20 +476,23 @@
         $('.edit-racer-btn').on('click', function () {
             const racerId = $(this).data('racer-id');
             const racerName = $(this).data('racer-name');
-            const cardCode = $(this).data('card-code');
+            const cardNo = $(this).data('card-no');
             const cardId = $(this).data('card-id');
 
             // Populate modal fields
             $('#edit_racer_id').val(racerId);
             $('#edit_racer_name').val(racerName);
-            $('#edit_card_code').val(cardCode);
-            $('#edit_card_id').val(cardId);
+            $('#edit_current_card_id').val(cardId);
 
-            // Update card status text
-            if (cardCode) {
-                $('#card-status-text').html('<i class="fas fa-info-circle text-info"></i> Current card: <strong>' + cardCode + '</strong>. Leave empty to remove card or enter new code to update.');
+            // Remove any previously injected current-card option
+            $('#edit_card_id option[data-current]').remove();
+
+            // If racer has a current card, add it to the dropdown (it's assigned so not in availableCards)
+            if (cardId && cardNo) {
+                $('#edit_card_id').prepend('<option value="' + cardId + '" data-current="1">' + cardNo + ' (current)</option>');
+                $('#edit_card_id').val(cardId);
             } else {
-                $('#card-status-text').html('<i class="fas fa-info-circle text-muted"></i> No card assigned. Enter a card code to create and assign one.');
+                $('#edit_card_id').val('');
             }
 
             // Reset validation states
@@ -708,8 +716,8 @@
 
             const formData = {
                 racer_name: $('#edit_racer_name').val(),
-                card_code: $('#edit_card_code').val(),
-                card_id: $('#edit_card_id').val()
+                card_id: $('#edit_card_id').val(),
+                current_card_id: $('#edit_current_card_id').val()
             };
 
             $.ajax({
@@ -781,6 +789,7 @@
         $('#editRacerModal').on('hidden.bs.modal', function () {
             const form = $('#editRacerForm');
             form[0].reset();
+            $('#edit_card_id option[data-current]').remove();
             form.find('.is-invalid').removeClass('is-invalid');
             form.find('.invalid-feedback').text('');
             $('#updateRacerBtn').prop('disabled', false).html('<i class="fas fa-save"></i> Update Racer');

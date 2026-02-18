@@ -26,6 +26,19 @@
             <div class="row">
                 <div class="col-md-6">
                     <div class="form-group">
+                        <label for="card_no">Card No</label>
+                        <input type="text" class="form-control @error('card_no') is-invalid @enderror" id="card_no"
+                            name="card_no" value="{{ old('card_no', $card->card_no) }}"
+                            placeholder="Enter card no">
+                        @error('card_no')
+                            <span class="invalid-feedback" role="alert">
+                                <strong>{{ $message }}</strong>
+                            </span>
+                        @enderror
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
                         <label for="card_code">Card Code <span class="text-danger">*</span></label>
                         <input type="text" class="form-control @error('card_code') is-invalid @enderror" id="card_code"
                             name="card_code" value="{{ old('card_code', $card->card_code) }}"

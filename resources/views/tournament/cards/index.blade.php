@@ -91,7 +91,7 @@
             <table class="table table-bordered table-striped table-hover">
                 <thead>
                     <tr>
-                        <th>Card Code</th>
+                        <th>Card No</th>
                         <th>Racer</th>
                         <th>Team</th>
                         <th>Status</th>
@@ -103,7 +103,7 @@
                 <tbody>
                     @forelse($cards as $card)
                         <tr>
-                            <td><code>{{ $card->card_code }}</code></td>
+                            <td>{{ $card->card_no }}</td>
                             <td>
                                 @if($card->racer)
                                     {{ $card->racer->racer_name }}
