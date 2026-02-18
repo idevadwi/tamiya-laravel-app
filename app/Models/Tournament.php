@@ -23,12 +23,18 @@ class Tournament extends Model
         'max_racer_per_team',
         'champion_number',
         'best_race_enabled',
+        'best_race_live_update',
         'best_race_number',
         'persiapan_delay',
         'panggilan_delay',
         'status',
         'created_by',
         'updated_by'
+    ];
+
+    protected $casts = [
+        'best_race_enabled' => 'boolean',
+        'best_race_live_update' => 'boolean',
     ];
 
     protected static function boot()

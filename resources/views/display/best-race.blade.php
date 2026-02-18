@@ -81,19 +81,22 @@
     var channelName = tournamentSlug + ':best-race';
     var storageKey = 'best-race-' + tournamentSlug;
     var ablyKey = '{{ config("services.ably.key") }}';
-    
+    var liveUpdateEnabled = {{ $tournament->best_race_live_update ? 'true' : 'false' }};
+
     var ably = null;
     var channel = null;
     var currentData = [];
-    
-    // Only initialize Ably if key is configured
-    if (ablyKey && ablyKey !== '') {
+
+    // Only initialize Ably if key is configured and live update is enabled
+    if (liveUpdateEnabled && ablyKey && ablyKey !== '') {
         try {
             ably = new Ably.Realtime(ablyKey);
             channel = ably.channels.get(channelName);
         } catch (e) {
             console.error('Ably initialization failed:', e);
         }
+    } else if (!liveUpdateEnabled) {
+        console.info('Live update disabled for this tournament. Refresh the page to get latest data.');
     } else {
         console.warn('Ably key not configured. Real-time updates disabled.');
     }

@@ -9,7 +9,9 @@ use App\Models\Racer;
 use App\Models\Team;
 use App\Models\Tournament;
 use App\Models\TournamentParticipant;
+use App\Helpers\AblyHelper;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 
@@ -130,6 +132,10 @@ class RaceController extends Controller
         // Load relationships for response
         $race->load(['tournament', 'racer.team', 'team', 'card']);
 
+        if ($tournament->best_race_live_update) {
+            $this->publishBestRaceUpdate($tournament);
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Race created successfully',
@@ -140,8 +146,34 @@ class RaceController extends Controller
     }
 
     /**
+     * Publish best race update to Ably
+     */
+    private function publishBestRaceUpdate($tournament)
+    {
+        $nextStage = $tournament->current_stage + 1;
+
+        $topTeams = Race::where('tournament_id', $tournament->id)
+            ->where('stage', $nextStage)
+            ->join('teams', 'races.team_id', '=', 'teams.id')
+            ->select('teams.team_name', DB::raw('count(*) as total'))
+            ->groupBy('teams.id', 'teams.team_name')
+            ->orderByDesc('total')
+            ->limit(6)
+            ->get()
+            ->map(function ($race) {
+                return [
+                    'TEAM NAME' => $race->team_name,
+                    'TOTAL' => $race->total
+                ];
+            })
+            ->toArray();
+
+        AblyHelper::publishBestRace($tournament, $topTeams);
+    }
+
+    /**
      * Calculate race_no, track and lane for a new race in a specific stage.
-     * 
+     *
      * @param \App\Models\Tournament $tournament
      * @param int $stage
      * @return array ['race_no' => int, 'track' => int, 'lane' => string]

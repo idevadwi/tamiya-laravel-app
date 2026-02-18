@@ -238,15 +238,31 @@
                     <div class="col-md-6">
                         <div class="form-group">
                             <div class="form-check">
-                                <input type="checkbox" 
-                                       class="form-check-input" 
-                                       id="best_race_enabled" 
-                                       name="best_race_enabled" 
+                                <input type="checkbox"
+                                       class="form-check-input"
+                                       id="best_race_enabled"
+                                       name="best_race_enabled"
                                        value="1"
                                        {{ old('best_race_enabled', $tournament->best_race_enabled) ? 'checked' : '' }}>
                                 <label class="form-check-label" for="best_race_enabled">
                                     Best Race Enabled
                                 </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="form-check">
+                                <input type="checkbox"
+                                       class="form-check-input"
+                                       id="best_race_live_update"
+                                       name="best_race_live_update"
+                                       value="1"
+                                       {{ old('best_race_live_update', $tournament->best_race_live_update) ? 'checked' : '' }}>
+                                <label class="form-check-label" for="best_race_live_update">
+                                    Best Race Live Update
+                                </label>
+                                <small class="form-text text-muted">When enabled, the leaderboard updates automatically via Ably when a new race is added.</small>
                             </div>
                         </div>
                     </div>

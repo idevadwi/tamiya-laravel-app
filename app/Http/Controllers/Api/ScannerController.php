@@ -8,7 +8,9 @@ use App\Models\Race;
 use App\Models\Card;
 use App\Models\Racer;
 use App\Models\TournamentParticipant;
+use App\Helpers\AblyHelper;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 
@@ -178,6 +180,10 @@ class ScannerController extends Controller
                 'created_by' => null,
             ]);
 
+            if ($tournament->best_race_live_update) {
+                $this->publishBestRaceUpdate($tournament);
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Race created successfully',
@@ -281,6 +287,32 @@ class ScannerController extends Controller
                 'message' => 'An unexpected error occurred. Please contact administrator.',
             ], 500);
         }
+    }
+
+    /**
+     * Publish best race update to Ably
+     */
+    private function publishBestRaceUpdate($tournament)
+    {
+        $nextStage = $tournament->current_stage + 1;
+
+        $topTeams = Race::where('tournament_id', $tournament->id)
+            ->where('stage', $nextStage)
+            ->join('teams', 'races.team_id', '=', 'teams.id')
+            ->select('teams.team_name', DB::raw('count(*) as total'))
+            ->groupBy('teams.id', 'teams.team_name')
+            ->orderByDesc('total')
+            ->limit(6)
+            ->get()
+            ->map(function ($race) {
+                return [
+                    'TEAM NAME' => $race->team_name,
+                    'TOTAL' => $race->total
+                ];
+            })
+            ->toArray();
+
+        AblyHelper::publishBestRace($tournament, $topTeams);
     }
 
     /**

@@ -36,7 +36,7 @@
                             <th>Track Number</th>
                             <th>Max Racers/Team</th>
                             <th>Champions</th>
-                            <th>Created At</th>
+                            {{-- <th>Created At</th> --}}
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -59,17 +59,17 @@
                                 <td>{{ $tournament->track_number }}</td>
                                 <td>{{ $tournament->max_racer_per_team }}</td>
                                 <td>{{ $tournament->champion_number }}</td>
-                                <td>{{ $tournament->created_at->format('Y-m-d H:i') }}</td>
+                                {{-- <td>{{ $tournament->created_at->format('Y-m-d H:i') }}</td> --}}
                                 <td>
                                     <div class="btn-group" role="group">
                                         <a href="{{ route('tournaments.show', $tournament->id) }}" 
                                            class="btn btn-sm btn-info" title="View">
                                             <i class="fas fa-eye"></i>
                                         </a>
-                                        <a href="{{ route('tournaments.edit', $tournament->id) }}" 
+                                        {{-- <a href="{{ route('tournaments.edit', $tournament->id) }}" 
                                            class="btn btn-sm btn-warning" title="Edit">
                                             <i class="fas fa-edit"></i>
-                                        </a>
+                                        </a> --}}
                                         <a href="{{ route('tournaments.settings', $tournament->id) }}" 
                                            class="btn btn-sm btn-secondary" title="Settings">
                                             <i class="fas fa-cog"></i>

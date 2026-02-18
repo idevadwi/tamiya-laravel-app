@@ -271,8 +271,9 @@ class RaceController extends Controller
             'created_by' => auth()->id(),
         ]);
 
-        // Publish best race update
-        // $this->publishBestRaceUpdate($tournament);
+        if ($tournament->best_race_live_update) {
+            $this->publishBestRaceUpdate($tournament);
+        }
 
         return redirect()->route('tournament.races.index')
             ->with('success', "Race created successfully. Stage: {$stage}, Race No: {$trackAndLane['race_no']}, Track: {$trackAndLane['track']}, Lane: {$trackAndLane['lane']}");
@@ -704,6 +705,10 @@ class RaceController extends Controller
         $totalRacesInStage = Race::where('tournament_id', $tournament->id)
             ->where('stage', $stage)
             ->count();
+
+        if ($tournament->best_race_live_update) {
+            $this->publishBestRaceUpdate($tournament);
+        }
 
         return response()->json([
             'success' => true,
