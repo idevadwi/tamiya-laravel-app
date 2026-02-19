@@ -44,6 +44,7 @@ return [
     'convert' => 'Konversi',
     'select_stage' => 'Pilih Babak',
     'stage' => 'Babak',
+    'share_links' => 'Bagikan Tautan',
     
     // Best Times
     'best_times_overall' => 'Best Times Overall (BTO)',

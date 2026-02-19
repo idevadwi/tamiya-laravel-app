@@ -187,6 +187,10 @@
                 {{-- <a href="{{ route('tournament.best_times.index') }}" class="btn btn-secondary btn-block mb-2">
                     <i class="fas fa-stopwatch"></i> {{ __('messages.manage_best_times') }}
                 </a> --}}
+                <button type="button" class="btn btn-outline-primary btn-block mb-2" data-toggle="modal"
+                    data-target="#shareLinksModal">
+                    <i class="fas fa-share-alt"></i> {{ __('messages.share_links') }}
+                </button>
                 @if($isAdmin)
                     <a href="{{ route('tournaments.settings', $activeTournament->id) }}" class="btn btn-secondary btn-block">
                         <i class="fas fa-cog"></i> {{ __('messages.tournament_settings') }}
@@ -429,6 +433,78 @@
     </div>
 </div>
 
+<!-- Share Links Modal -->
+<div class="modal fade" id="shareLinksModal" tabindex="-1" role="dialog" aria-labelledby="shareLinksLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="shareLinksLabel">
+                    <i class="fas fa-share-alt"></i> {{ __('messages.share_links') }}
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="{{ __('messages.close') }}">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted mb-3">{{ $activeTournament->tournament_name }}</p>
+
+                {{-- Best Race --}}
+                <div class="form-group">
+                    <label class="font-weight-bold"><i class="fas fa-trophy text-warning"></i> Best Race</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control share-link-input" readonly
+                            value="{{ url($activeTournament->slug . '/best-race') }}">
+                        <div class="input-group-append">
+                            <button class="btn btn-outline-secondary btn-copy" type="button"
+                                data-clipboard-target="{{ url($activeTournament->slug . '/best-race') }}">
+                                <i class="fas fa-copy"></i> Copy
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Summary --}}
+                <div class="form-group">
+                    <label class="font-weight-bold"><i class="fas fa-list-alt text-info"></i> Summary</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control share-link-input" readonly
+                            value="{{ url($activeTournament->slug . '/summary') }}">
+                        <div class="input-group-append">
+                            <button class="btn btn-outline-secondary btn-copy" type="button"
+                                data-clipboard-target="{{ url($activeTournament->slug . '/summary') }}">
+                                <i class="fas fa-copy"></i> Copy
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Tracks --}}
+                @for($track = 1; $track <= $activeTournament->track_number; $track++)
+                    <div class="form-group">
+                        <label class="font-weight-bold">
+                            <i class="fas fa-flag text-danger"></i> Track {{ $track }}
+                        </label>
+                        <div class="input-group">
+                            <input type="text" class="form-control share-link-input" readonly
+                                value="{{ url($activeTournament->slug . '/track-' . $track) }}">
+                            <div class="input-group-append">
+                                <button class="btn btn-outline-secondary btn-copy" type="button"
+                                    data-clipboard-target="{{ url($activeTournament->slug . '/track-' . $track) }}">
+                                    <i class="fas fa-copy"></i> Copy
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                @endfor
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">{{ __('messages.close') }}</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Confirm Next Session Modal -->
 <div class="modal fade" id="confirmNextSessionModal" tabindex="-1" role="dialog" aria-labelledby="confirmNextSessionLabel"
     aria-hidden="true">
@@ -629,6 +705,18 @@
                     // Reset button
                     submitBtn.prop('disabled', false).html(originalText);
                 }
+            });
+        });
+
+        // Copy to clipboard for share links
+        $(document).on('click', '.btn-copy', function() {
+            var text = $(this).data('clipboard-target');
+            navigator.clipboard.writeText(text).then(() => {
+                var btn = $(this);
+                btn.html('<i class="fas fa-check"></i> Copied!').addClass('btn-success').removeClass('btn-outline-secondary');
+                setTimeout(function() {
+                    btn.html('<i class="fas fa-copy"></i> Copy').removeClass('btn-success').addClass('btn-outline-secondary');
+                }, 2000);
             });
         });
 

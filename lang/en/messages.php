@@ -44,6 +44,7 @@ return [
     'convert' => 'Convert',
     'select_stage' => 'Select Stage',
     'stage' => 'Stage',
+    'share_links' => 'Share Links',
     
     
     // Best Times
