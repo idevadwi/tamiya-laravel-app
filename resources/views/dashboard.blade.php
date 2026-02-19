@@ -449,6 +449,26 @@
             <div class="modal-body">
                 <p class="text-muted mb-3">{{ $activeTournament->tournament_name }}</p>
 
+                {{-- Race Schedule --}}
+                <div class="form-group">
+                    <label class="font-weight-bold"><i class="fas fa-flag-checkered text-secondary"></i> Race Schedule</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control share-link-input" readonly
+                            value="{{ url($activeTournament->slug . '/races') }}">
+                        <div class="input-group-append">
+                            <button class="btn btn-outline-secondary btn-copy" type="button"
+                                data-clipboard-target="{{ url($activeTournament->slug . '/races') }}">
+                                <i class="fas fa-copy"></i> Copy
+                            </button>
+                            <button class="btn btn-outline-primary btn-show-qr" type="button"
+                                data-qr-url="{{ url($activeTournament->slug . '/races') }}"
+                                data-qr-label="Race Schedule">
+                                <i class="fas fa-qrcode"></i> QR
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 {{-- Best Race --}}
                 <div class="form-group">
                     <label class="font-weight-bold"><i class="fas fa-trophy text-warning"></i> Best Race</label>
@@ -505,6 +525,29 @@
     </div>
 </div>
 
+<!-- QR Code Modal -->
+<div class="modal fade" id="qrCodeModal" tabindex="-1" role="dialog" aria-labelledby="qrCodeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-sm" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="qrCodeModalLabel">
+                    <i class="fas fa-qrcode"></i> QR Code — <span id="qrCodeTitle"></span>
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body text-center">
+                <p id="qrCodeUrl" class="text-muted small text-break mb-3"></p>
+                <div id="qrcode" class="d-inline-block"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">{{ __('messages.close') }}</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Confirm Next Session Modal -->
 <div class="modal fade" id="confirmNextSessionModal" tabindex="-1" role="dialog" aria-labelledby="confirmNextSessionLabel"
     aria-hidden="true">
@@ -540,6 +583,7 @@
 
 @section('js')
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
 <script>
     $(document).ready(function() {
         // Show session alerts using SweetAlert2
@@ -718,6 +762,35 @@
                     btn.html('<i class="fas fa-copy"></i> Copy').removeClass('btn-success').addClass('btn-outline-secondary');
                 }, 2000);
             });
+        });
+
+        // QR Code generation
+        var qrCodeInstance = null;
+
+        $(document).on('click', '.btn-show-qr', function() {
+            var url = $(this).data('qr-url');
+            var label = $(this).data('qr-label');
+
+            $('#qrCodeTitle').text(label);
+            $('#qrCodeUrl').text(url);
+
+            // Clear previous QR and regenerate
+            var qrContainer = document.getElementById('qrcode');
+            qrContainer.innerHTML = '';
+            qrCodeInstance = new QRCode(qrContainer, {
+                text: url,
+                width: 220,
+                height: 220,
+                correctLevel: QRCode.CorrectLevel.H
+            });
+
+            $('#qrCodeModal').modal('show');
+        });
+
+        // Clear QR when modal closes
+        $('#qrCodeModal').on('hidden.bs.modal', function() {
+            document.getElementById('qrcode').innerHTML = '';
+            qrCodeInstance = null;
         });
 
         // Handle next session form submission

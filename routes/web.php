@@ -171,6 +171,7 @@ Route::prefix('{slug}')->group(function () {
     Route::get('/best-race', [App\Http\Controllers\DisplayController::class, 'bestRace'])->name('display.best-race');
     Route::get('/track-{track}', [App\Http\Controllers\DisplayController::class, 'track'])->name('display.track')
         ->where('track', '[1-9]');
+    Route::get('/races', [App\Http\Controllers\DisplayController::class, 'races'])->name('display.races');
 });
 
 // API routes for real-time data

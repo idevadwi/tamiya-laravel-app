@@ -271,7 +271,7 @@ class RaceController extends Controller
             'created_by' => auth()->id(),
         ]);
 
-        if ($tournament->best_race_live_update) {
+        if ($tournament->best_race_live_update && $stage === 2) {
             $this->publishBestRaceUpdate($tournament);
         }
 
@@ -706,7 +706,7 @@ class RaceController extends Controller
             ->where('stage', $stage)
             ->count();
 
-        if ($tournament->best_race_live_update) {
+        if ($tournament->best_race_live_update && $stage === 2) {
             $this->publishBestRaceUpdate($tournament);
         }
 

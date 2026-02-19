@@ -132,7 +132,7 @@ class RaceController extends Controller
         // Load relationships for response
         $race->load(['tournament', 'racer.team', 'team', 'card']);
 
-        if ($tournament->best_race_live_update) {
+        if ($tournament->best_race_live_update && $stage === 2) {
             $this->publishBestRaceUpdate($tournament);
         }
 

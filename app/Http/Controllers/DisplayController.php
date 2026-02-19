@@ -6,6 +6,7 @@ use App\Models\Tournament;
 use App\Models\Race;
 use App\Models\BestTime;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class DisplayController extends Controller
 {
@@ -26,6 +27,56 @@ class DisplayController extends Controller
         }
 
         return view('display.track', compact('tournament', 'trackNumber'));
+    }
+
+    public function races($slug, Request $request)
+    {
+        $tournament = Tournament::where('slug', $slug)->firstOrFail();
+
+        // Get all stages for this tournament
+        $stages = Race::where('tournament_id', $tournament->id)
+            ->distinct()
+            ->orderBy('stage', 'desc')
+            ->pluck('stage');
+
+        // Get the selected stage or default to first available
+        $selectedStage = $request->has('stage') && $request->stage !== ''
+            ? (int) $request->stage
+            : ($stages->first() ?? null);
+
+        // Build race query
+        $query = Race::where('tournament_id', $tournament->id)
+            ->with(['racer.team', 'team']);
+
+        if ($selectedStage) {
+            $query->where('stage', $selectedStage);
+        }
+
+        $allRaces = $query->orderBy('race_no')->orderBy('track')->orderBy('lane')->get();
+
+        // Organize races by stage → race_no → lane
+        $racesByStage = [];
+        foreach ($allRaces as $race) {
+            $stage = $race->stage;
+            $raceNo = $race->race_no ?? 0;
+            if (!isset($racesByStage[$stage])) $racesByStage[$stage] = [];
+            if (!isset($racesByStage[$stage][$raceNo])) $racesByStage[$stage][$raceNo] = [];
+            $racesByStage[$stage][$raceNo][$race->lane] = $race;
+        }
+
+        $raceNumbers = [];
+        if ($selectedStage && isset($racesByStage[$selectedStage])) {
+            $raceNumbers = array_keys($racesByStage[$selectedStage]);
+            sort($raceNumbers);
+        }
+
+        $maxRaceNo = max(12, $raceNumbers ? max($raceNumbers) : 0);
+        $viewMode = $request->get('view', 'team');
+
+        return view('display.races', compact(
+            'tournament', 'stages', 'racesByStage',
+            'selectedStage', 'raceNumbers', 'maxRaceNo', 'viewMode'
+        ));
     }
 
     public function bestRaceSnapshot($slug)

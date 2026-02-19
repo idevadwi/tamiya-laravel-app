@@ -180,7 +180,7 @@ class ScannerController extends Controller
                 'created_by' => null,
             ]);
 
-            if ($tournament->best_race_live_update) {
+            if ($tournament->best_race_live_update && $stage === 2) {
                 $this->publishBestRaceUpdate($tournament);
             }
 

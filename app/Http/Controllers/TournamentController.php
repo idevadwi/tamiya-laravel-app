@@ -267,7 +267,7 @@ class TournamentController extends Controller
         setActiveTournament($tournament);
 
         // Publish best race update for new stage
-        $this->publishBestRaceUpdate($tournament);
+        // $this->publishBestRaceUpdate($tournament);
 
         return redirect()->route('dashboard')
             ->with('success', "Moved to stage {$tournament->current_stage}.");
