@@ -23,7 +23,11 @@ class MasterTeamController extends Controller
             $query->where('team_name', 'like', '%' . $request->search . '%');
         }
 
-        $teams = $query->latest()->paginate(15);
+        $allowedSorts = ['team_name', 'racers_count', 'tournament_participants_count', 'created_at'];
+        $sort = in_array($request->sort, $allowedSorts) ? $request->sort : 'created_at';
+        $direction = $request->direction === 'asc' ? 'asc' : 'desc';
+
+        $teams = $query->orderBy($sort, $direction)->paginate(15);
         $teams->appends($request->query());
 
         return view('admin.teams.index', compact('teams'));

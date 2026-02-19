@@ -103,6 +103,7 @@ Route::middleware(['auth', 'role.web:ADMINISTRATOR'])->prefix('admin')->name('ad
     // Card bulk create routes
     Route::get('cards/bulk-create', [App\Http\Controllers\Admin\MasterCardController::class, 'bulkCreate'])->name('cards.bulk-create');
     Route::post('cards/bulk-create', [App\Http\Controllers\Admin\MasterCardController::class, 'bulkStore'])->name('cards.bulk-store');
+    Route::post('cards/bulk-destroy', [App\Http\Controllers\Admin\MasterCardController::class, 'bulkDestroy'])->name('cards.bulk-destroy');
     Route::resource('cards', App\Http\Controllers\Admin\MasterCardController::class);
 
     // Scanner Device Management
@@ -120,6 +121,7 @@ Route::middleware(['auth', 'role.web:ADMINISTRATOR,MODERATOR', 'tournament.conte
     Route::post('/racers/{racer}/update-with-card', [App\Http\Controllers\Tournament\RacerController::class, 'updateWithCard'])->name('racers.updateWithCard');
     Route::resource('racers', App\Http\Controllers\Tournament\RacerController::class);
 
+    Route::post('/cards/bulk-destroy', [App\Http\Controllers\Tournament\CardController::class, 'bulkDestroy'])->name('cards.bulk-destroy');
     Route::resource('cards', App\Http\Controllers\Tournament\CardController::class);
 
     // Keep other tournament resources here for now but pointing to original controllers

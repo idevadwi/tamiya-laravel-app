@@ -137,10 +137,14 @@
                                     </a>
                                     <form action="{{ route('tournament.racers.destroy', $racer->id) }}" method="POST"
                                         class="d-inline ml-2"
-                                        onsubmit="return confirm('Are you sure you want to delete this racer?');">
+                                        id="delete-form-{{ $racer->id }}">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-danger" title="Delete">
+                                        <button type="button"
+                                                class="btn btn-sm btn-danger btn-delete"
+                                                title="Delete"
+                                                data-form-id="delete-form-{{ $racer->id }}"
+                                                data-item="{{ $racer->racer_name }}">
                                             <i class="fas fa-trash"></i> Delete
                                         </button>
                                     </form>
@@ -165,6 +169,39 @@
         </div>
     @endif
 </div>
+
+{{-- Delete Confirmation Modal --}}
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content border-danger">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteModalLabel">
+                    <i class="fas fa-exclamation-triangle mr-2"></i> Delete Racer
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-1">Are you sure you want to permanently delete racer:</p>
+                <p class="font-weight-bold" id="deleteItemName"></p>
+                <p class="text-danger mb-0">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <small>Cannot delete if racer is participating in tournaments.</small>
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                    <i class="fas fa-trash"></i> Delete Permanently
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @stop
 
 @section('css')
@@ -175,4 +212,21 @@
 @stop
 
 @section('js')
+<script>
+    var pendingFormId = null;
+
+    document.querySelectorAll('.btn-delete').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            pendingFormId = this.getAttribute('data-form-id');
+            document.getElementById('deleteItemName').textContent = this.getAttribute('data-item');
+            $('#deleteModal').modal('show');
+        });
+    });
+
+    document.getElementById('confirmDeleteBtn').addEventListener('click', function () {
+        if (pendingFormId) {
+            document.getElementById(pendingFormId).submit();
+        }
+    });
+</script>
 @stop

@@ -30,7 +30,11 @@ class MasterRacerController extends Controller
             $query->where('team_id', $request->team_id);
         }
 
-        $racers = $query->latest()->paginate(15);
+        $allowedSorts = ['racer_name', 'cards_count', 'tournament_racer_participants_count', 'created_at'];
+        $sort = in_array($request->sort, $allowedSorts) ? $request->sort : 'created_at';
+        $direction = $request->direction === 'asc' ? 'asc' : 'desc';
+
+        $racers = $query->orderBy($sort, $direction)->paginate(15);
         $racers->appends($request->query());
 
         // Get all teams for filter dropdown

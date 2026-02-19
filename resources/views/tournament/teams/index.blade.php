@@ -108,10 +108,13 @@
                                     </a>
                                     <form action="{{ route('tournament.teams.destroy', $team->id) }}" method="POST"
                                         class="d-inline ml-2"
-                                        onsubmit="return confirm('Remove this team from the tournament?\n\nNote: The team will not be deleted and can be added to other tournaments.');">
+                                        id="delete-form-{{ $team->id }}">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-danger">
+                                        <button type="button"
+                                                class="btn btn-sm btn-danger btn-delete"
+                                                data-form-id="delete-form-{{ $team->id }}"
+                                                data-item="{{ $team->team_name }}">
                                             <i class="fas fa-trash"></i> Delete
                                         </button>
                                     </form>
@@ -136,6 +139,39 @@
         </div>
     @endif
 </div>
+
+{{-- Remove Team Confirmation Modal --}}
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content border-danger">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteModalLabel">
+                    <i class="fas fa-exclamation-triangle mr-2"></i> Remove Team from Tournament
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-1">Are you sure you want to remove team:</p>
+                <p class="font-weight-bold" id="deleteItemName"></p>
+                <p class="text-muted mb-0">
+                    <i class="fas fa-info-circle"></i>
+                    <small>The team will not be deleted and can be added to other tournaments.</small>
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                    <i class="fas fa-trash"></i> Remove from Tournament
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @stop
 
 @section('css')
@@ -146,4 +182,21 @@
 @stop
 
 @section('js')
+<script>
+    var pendingFormId = null;
+
+    document.querySelectorAll('.btn-delete').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            pendingFormId = this.getAttribute('data-form-id');
+            document.getElementById('deleteItemName').textContent = this.getAttribute('data-item');
+            $('#deleteModal').modal('show');
+        });
+    });
+
+    document.getElementById('confirmDeleteBtn').addEventListener('click', function () {
+        if (pendingFormId) {
+            document.getElementById(pendingFormId).submit();
+        }
+    });
+</script>
 @stop

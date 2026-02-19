@@ -100,10 +100,29 @@
                 ['sort' => $col, 'direction' => $sortDir($col)]
             ));
         @endphp
+
+        {{-- Bulk action toolbar --}}
+        <div id="bulkActionBar" class="d-none mb-2">
+            <div class="d-flex align-items-center bg-light border rounded px-3 py-2">
+                <span class="mr-3 font-weight-bold">
+                    <span id="selectedCount">0</span> selected
+                </span>
+                <button type="button" class="btn btn-sm btn-danger" id="btnBulkDelete">
+                    <i class="fas fa-trash"></i> Delete Selected
+                </button>
+                <button type="button" class="btn btn-sm btn-secondary ml-2" id="btnClearSelection">
+                    <i class="fas fa-times"></i> Clear
+                </button>
+            </div>
+        </div>
+
         <div class="table-responsive">
             <table class="table table-bordered table-striped table-hover">
                 <thead>
                     <tr>
+                        {{-- <th style="width: 36px;">
+                            <input type="checkbox" id="checkAll" title="Select all">
+                        </th> --}}
                         <th>
                             <a href="{{ $sortUrl('card_no') }}" class="text-dark text-decoration-none">
                                 Card No{!! $sortIcon('card_no') !!}
@@ -132,6 +151,9 @@
                 <tbody>
                     @forelse($cards as $card)
                         <tr>
+                            {{-- <td>
+                                <input type="checkbox" class="card-checkbox" value="{{ $card->id }}">
+                            </td> --}}
                             <td>{{ $card->card_no }}</td>
                             <td>
                                 @if($card->racer)
@@ -172,10 +194,14 @@
                                     </a>
                                     <form action="{{ route('tournament.cards.destroy', $card->id) }}" method="POST"
                                         class="d-inline ml-2"
-                                        onsubmit="return confirm('Are you sure you want to delete this card?');">
+                                        id="delete-form-{{ $card->id }}">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-danger" title="Delete">
+                                        <button type="button"
+                                                class="btn btn-sm btn-danger btn-delete"
+                                                title="Delete"
+                                                data-form-id="delete-form-{{ $card->id }}"
+                                                data-item="{{ $card->card_no }}">
                                             <i class="fas fa-trash"></i> Delete
                                         </button>
                                     </form>
@@ -200,6 +226,76 @@
         </div>
     @endif
 </div>
+
+{{-- Hidden bulk-delete form --}}
+<form id="bulkDeleteForm" method="POST" action="{{ route('tournament.cards.bulk-destroy') }}" class="d-none">
+    @csrf
+    <div id="bulkDeleteInputs"></div>
+</form>
+
+{{-- Bulk Delete Confirmation Modal --}}
+<div class="modal fade" id="bulkDeleteModal" tabindex="-1" role="dialog" aria-labelledby="bulkDeleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content border-danger">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="bulkDeleteModalLabel">
+                    <i class="fas fa-exclamation-triangle mr-2"></i> Delete Selected Cards
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-1">Are you sure you want to permanently delete <strong id="bulkDeleteCount"></strong> card(s)?</p>
+                <p class="text-danger mb-0">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <small>This action cannot be undone.</small>
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmBulkDeleteBtn">
+                    <i class="fas fa-trash"></i> Delete Permanently
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Delete Confirmation Modal --}}
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content border-danger">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteModalLabel">
+                    <i class="fas fa-exclamation-triangle mr-2"></i> Delete Card
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-1">Are you sure you want to permanently delete card:</p>
+                <p class="font-weight-bold" id="deleteItemName"></p>
+                <p class="text-danger mb-0">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <small>This action cannot be undone.</small>
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                    <i class="fas fa-trash"></i> Delete Permanently
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @stop
 
 @section('css')
@@ -210,4 +306,76 @@
 @stop
 
 @section('js')
+<script>
+    // ── Single delete ──────────────────────────────────────────────
+    var pendingFormId = null;
+
+    document.querySelectorAll('.btn-delete').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            pendingFormId = this.getAttribute('data-form-id');
+            document.getElementById('deleteItemName').textContent = this.getAttribute('data-item');
+            $('#deleteModal').modal('show');
+        });
+    });
+
+    document.getElementById('confirmDeleteBtn').addEventListener('click', function () {
+        if (pendingFormId) {
+            document.getElementById(pendingFormId).submit();
+        }
+    });
+
+    // ── Bulk delete ────────────────────────────────────────────────
+    var checkAll     = document.getElementById('checkAll');
+    var checkboxes   = document.querySelectorAll('.card-checkbox');
+    var bulkBar      = document.getElementById('bulkActionBar');
+    var selectedCount= document.getElementById('selectedCount');
+
+    function getSelectedIds() {
+        return Array.from(checkboxes).filter(c => c.checked).map(c => c.value);
+    }
+
+    function updateBulkBar() {
+        var ids = getSelectedIds();
+        selectedCount.textContent = ids.length;
+        bulkBar.classList.toggle('d-none', ids.length === 0);
+        checkAll.indeterminate = ids.length > 0 && ids.length < checkboxes.length;
+        checkAll.checked = ids.length === checkboxes.length && checkboxes.length > 0;
+    }
+
+    checkAll.addEventListener('change', function () {
+        checkboxes.forEach(c => c.checked = this.checked);
+        updateBulkBar();
+    });
+
+    checkboxes.forEach(function (cb) {
+        cb.addEventListener('change', updateBulkBar);
+    });
+
+    document.getElementById('btnClearSelection').addEventListener('click', function () {
+        checkboxes.forEach(c => c.checked = false);
+        checkAll.checked = false;
+        updateBulkBar();
+    });
+
+    document.getElementById('btnBulkDelete').addEventListener('click', function () {
+        var ids = getSelectedIds();
+        if (ids.length === 0) return;
+        document.getElementById('bulkDeleteCount').textContent = ids.length;
+        $('#bulkDeleteModal').modal('show');
+    });
+
+    document.getElementById('confirmBulkDeleteBtn').addEventListener('click', function () {
+        var ids = getSelectedIds();
+        var container = document.getElementById('bulkDeleteInputs');
+        container.innerHTML = '';
+        ids.forEach(function (id) {
+            var input = document.createElement('input');
+            input.type  = 'hidden';
+            input.name  = 'card_ids[]';
+            input.value = id;
+            container.appendChild(input);
+        });
+        document.getElementById('bulkDeleteForm').submit();
+    });
+</script>
 @stop

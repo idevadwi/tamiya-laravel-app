@@ -274,6 +274,34 @@ class CardController extends Controller
     }
 
     /**
+     * Bulk delete cards belonging to the active tournament.
+     */
+    public function bulkDestroy(Request $request)
+    {
+        $tournament = getActiveTournament();
+
+        if (!$tournament) {
+            return redirect()->route('home')
+                ->with('error', 'Please select a tournament first.');
+        }
+
+        $validated = $request->validate([
+            'card_ids'   => 'required|array|min:1',
+            'card_ids.*' => 'uuid|exists:cards,id',
+        ]);
+
+        $racerIds = TournamentRacerParticipant::where('tournament_id', $tournament->id)
+            ->pluck('racer_id');
+
+        $deleted = Card::whereIn('id', $validated['card_ids'])
+            ->whereIn('racer_id', $racerIds)
+            ->delete();
+
+        return redirect()->route('tournament.cards.index')
+            ->with('success', "{$deleted} card(s) deleted successfully.");
+    }
+
+    /**
      * Remove the specified card.
      */
     public function destroy(Card $card)

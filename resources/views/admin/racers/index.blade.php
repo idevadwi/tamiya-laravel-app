@@ -67,14 +67,26 @@
     </div>
     <div class="card-body">
         <div class="table-responsive">
+            @php
+                $sortField = request('sort', 'created_at');
+                $sortDir   = request('direction', 'desc');
+                $nextDir   = $sortDir === 'asc' ? 'desc' : 'asc';
+                $sortIcon  = fn($col) => $sortField === $col
+                    ? '<i class="fas fa-sort-' . ($sortDir === 'asc' ? 'up' : 'down') . '"></i>'
+                    : '<i class="fas fa-sort text-muted"></i>';
+                $sortUrl   = fn($col) => route('admin.racers.index', array_merge(
+                    request()->except(['sort', 'direction', 'page']),
+                    ['sort' => $col, 'direction' => $sortField === $col ? $nextDir : 'asc']
+                ));
+            @endphp
             <table class="table table-bordered table-striped table-hover">
                 <thead>
                     <tr>
-                        <th>Racer Name</th>
+                        <th><a href="{{ $sortUrl('racer_name') }}" class="text-dark">{!! $sortIcon('racer_name') !!} Racer Name</a></th>
                         <th>Team</th>
                         {{-- <th>Image</th> --}}
-                        <th>Total Cards</th>
-                        <th>Tournaments</th>
+                        <th><a href="{{ $sortUrl('cards_count') }}" class="text-dark">{!! $sortIcon('cards_count') !!} Total Cards</a></th>
+                        <th><a href="{{ $sortUrl('tournament_racer_participants_count') }}" class="text-dark">{!! $sortIcon('tournament_racer_participants_count') !!} Tournaments</a></th>
                         {{-- <th>Created At</th> --}}
                         <th>Actions</th>
                     </tr>
@@ -119,10 +131,14 @@
                                     </a>
                                     <form action="{{ route('admin.racers.destroy', $racer->id) }}" method="POST"
                                         class="d-inline ml-2"
-                                        onsubmit="return confirm('DELETE RACER PERMANENTLY?\n\nCannot delete if racer is participating in tournaments.\n\nAre you sure?');">
+                                        id="delete-form-{{ $racer->id }}">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-danger" title="Delete Racer">
+                                        <button type="button"
+                                                class="btn btn-sm btn-danger btn-delete"
+                                                title="Delete Racer"
+                                                data-form-id="delete-form-{{ $racer->id }}"
+                                                data-item="{{ $racer->racer_name }}">
                                             <i class="fas fa-trash"></i> Delete
                                         </button>
                                     </form>
@@ -147,10 +163,59 @@
         </div>
     @endif
 </div>
+{{-- Delete Confirmation Modal --}}
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content border-danger">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteModalLabel">
+                    <i class="fas fa-exclamation-triangle mr-2"></i> Delete Racer
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-1">Are you sure you want to permanently delete racer:</p>
+                <p class="font-weight-bold" id="deleteItemName"></p>
+                <p class="text-danger mb-0">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <small>Cannot delete if racer is participating in tournaments.</small>
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                    <i class="fas fa-trash"></i> Delete Permanently
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @stop
 
 @section('css')
 @stop
 
 @section('js')
+<script>
+    var pendingFormId = null;
+
+    document.querySelectorAll('.btn-delete').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            pendingFormId = this.getAttribute('data-form-id');
+            document.getElementById('deleteItemName').textContent = this.getAttribute('data-item');
+            $('#deleteModal').modal('show');
+        });
+    });
+
+    document.getElementById('confirmDeleteBtn').addEventListener('click', function () {
+        if (pendingFormId) {
+            document.getElementById(pendingFormId).submit();
+        }
+    });
+</script>
 @stop

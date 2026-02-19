@@ -36,7 +36,11 @@ class MasterCardController extends Controller
             $query->where('racer_id', $request->racer_id);
         }
 
-        $cards = $query->latest()->paginate(15);
+        $allowedSorts = ['card_no', 'card_code', 'status', 'created_at'];
+        $sort = in_array($request->sort, $allowedSorts) ? $request->sort : 'card_no';
+        $direction = in_array($request->direction, ['asc', 'desc']) ? $request->direction : 'asc';
+
+        $cards = $query->orderBy($sort, $direction)->paginate(15);
         $cards->appends($request->query());
 
         // Get all racers for filter dropdown
@@ -123,6 +127,22 @@ class MasterCardController extends Controller
 
         return redirect()->route('admin.cards.index')
             ->with('success', 'Card updated successfully.');
+    }
+
+    /**
+     * Bulk delete cards from master data.
+     */
+    public function bulkDestroy(Request $request)
+    {
+        $validated = $request->validate([
+            'card_ids'   => 'required|array|min:1',
+            'card_ids.*' => 'uuid|exists:cards,id',
+        ]);
+
+        $deleted = Card::whereIn('id', $validated['card_ids'])->delete();
+
+        return redirect()->route('admin.cards.index')
+            ->with('success', "{$deleted} card(s) deleted successfully.");
     }
 
     /**
