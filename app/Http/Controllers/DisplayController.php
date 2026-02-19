@@ -164,6 +164,140 @@ class DisplayController extends Controller
         ]);
     }
 
+    public function stats($slug)
+    {
+        $tournament = Tournament::where('slug', $slug)->firstOrFail();
+
+        $stages = Race::where('tournament_id', $tournament->id)
+            ->distinct()
+            ->orderBy('stage')
+            ->pluck('stage');
+
+        // Best race overall: team with most races across all stages
+        $bestRaceOverall = Race::where('tournament_id', $tournament->id)
+            ->join('teams', 'races.team_id', '=', 'teams.id')
+            ->select('teams.team_name', DB::raw('count(*) as total'))
+            ->groupBy('teams.id', 'teams.team_name')
+            ->orderByDesc('total')
+            ->first();
+
+        // Best racer overall: racer with most races across all stages
+        $bestRacerOverall = Race::where('tournament_id', $tournament->id)
+            ->whereNotNull('races.racer_id')
+            ->join('racers', 'races.racer_id', '=', 'racers.id')
+            ->join('teams', 'races.team_id', '=', 'teams.id')
+            ->select('racers.racer_name', 'teams.team_name', DB::raw('count(*) as total'))
+            ->groupBy('racers.id', 'racers.racer_name', 'teams.id', 'teams.team_name')
+            ->orderByDesc('total')
+            ->first();
+
+        // Best race per stage: top 5 teams per stage
+        $bestRacePerStage = [];
+        foreach ($stages as $stage) {
+            $bestRacePerStage[$stage] = Race::where('tournament_id', $tournament->id)
+                ->where('stage', $stage)
+                ->join('teams', 'races.team_id', '=', 'teams.id')
+                ->select('teams.team_name', DB::raw('count(*) as total'))
+                ->groupBy('teams.id', 'teams.team_name')
+                ->orderByDesc('total')
+                ->limit(5)
+                ->get();
+        }
+
+        // Best racer per stage: top 5 racers per stage
+        $bestRacerPerStage = [];
+        foreach ($stages as $stage) {
+            $bestRacerPerStage[$stage] = Race::where('tournament_id', $tournament->id)
+                ->where('stage', $stage)
+                ->whereNotNull('races.racer_id')
+                ->join('racers', 'races.racer_id', '=', 'racers.id')
+                ->join('teams', 'races.team_id', '=', 'teams.id')
+                ->select('racers.racer_name', 'teams.team_name', DB::raw('count(*) as total'))
+                ->groupBy('racers.id', 'racers.racer_name', 'teams.id', 'teams.team_name')
+                ->orderByDesc('total')
+                ->limit(5)
+                ->get();
+        }
+
+        // All races for team drilldown
+        $allRaces = Race::where('tournament_id', $tournament->id)
+            ->join('teams', 'races.team_id', '=', 'teams.id')
+            ->leftJoin('racers', 'races.racer_id', '=', 'racers.id')
+            ->select(
+                'races.stage',
+                'races.lane',
+                'races.team_id',
+                'teams.team_name',
+                'races.racer_id',
+                DB::raw("COALESCE(racers.racer_name, 'Unknown') as racer_name")
+            )
+            ->get();
+
+        $teamStatsData = [];
+        $teamsMap = [];
+
+        foreach ($allRaces as $race) {
+            $teamId = $race->team_id;
+            $stage  = (string) $race->stage;
+            $lane   = $race->lane;
+            $racerId    = $race->racer_id ?? 'no_racer';
+            $racerName  = $race->racer_name;
+
+            $teamsMap[$teamId] = $race->team_name;
+
+            if (!isset($teamStatsData[$teamId])) {
+                $teamStatsData[$teamId] = ['name' => $race->team_name, 'stages' => []];
+            }
+            if (!isset($teamStatsData[$teamId]['stages'][$stage])) {
+                $teamStatsData[$teamId]['stages'][$stage] = [
+                    'total'         => 0,
+                    'by_racer'      => [],
+                    'by_lane'       => [],
+                    'by_racer_lane' => [],
+                ];
+            }
+
+            $teamStatsData[$teamId]['stages'][$stage]['total']++;
+
+            if (!isset($teamStatsData[$teamId]['stages'][$stage]['by_lane'][$lane])) {
+                $teamStatsData[$teamId]['stages'][$stage]['by_lane'][$lane] = 0;
+            }
+            $teamStatsData[$teamId]['stages'][$stage]['by_lane'][$lane]++;
+
+            if (!isset($teamStatsData[$teamId]['stages'][$stage]['by_racer'][$racerId])) {
+                $teamStatsData[$teamId]['stages'][$stage]['by_racer'][$racerId] = ['name' => $racerName, 'count' => 0];
+            }
+            $teamStatsData[$teamId]['stages'][$stage]['by_racer'][$racerId]['count']++;
+
+            if (!isset($teamStatsData[$teamId]['stages'][$stage]['by_racer_lane'][$racerId])) {
+                $teamStatsData[$teamId]['stages'][$stage]['by_racer_lane'][$racerId] = ['name' => $racerName, 'lanes' => []];
+            }
+            if (!isset($teamStatsData[$teamId]['stages'][$stage]['by_racer_lane'][$racerId]['lanes'][$lane])) {
+                $teamStatsData[$teamId]['stages'][$stage]['by_racer_lane'][$racerId]['lanes'][$lane] = 0;
+            }
+            $teamStatsData[$teamId]['stages'][$stage]['by_racer_lane'][$racerId]['lanes'][$lane]++;
+        }
+
+        // Sort lanes alphabetically within each team/stage
+        foreach ($teamStatsData as $tid => $teamData) {
+            foreach ($teamData['stages'] as $s => $stageData) {
+                ksort($teamStatsData[$tid]['stages'][$s]['by_lane']);
+                foreach ($stageData['by_racer_lane'] as $rid => $rl) {
+                    ksort($teamStatsData[$tid]['stages'][$s]['by_racer_lane'][$rid]['lanes']);
+                }
+            }
+        }
+
+        asort($teamsMap);
+
+        return view('display.stats', compact(
+            'tournament', 'stages',
+            'bestRaceOverall', 'bestRacerOverall',
+            'bestRacePerStage', 'bestRacerPerStage',
+            'teamsMap', 'teamStatsData'
+        ));
+    }
+
     private function timerToSeconds($timer)
     {
         $parts = explode(':', $timer);

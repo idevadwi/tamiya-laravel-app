@@ -16,9 +16,15 @@
                 <i class="fas fa-flag-checkered mr-2"></i>
                 {{ $tournament->tournament_name }}
             </span>
-            <span class="navbar-text text-muted ml-auto" style="font-size: 13px;">
-                Stage {{ $selectedStage ?? '–' }}
-            </span>
+            <div class="ml-auto d-flex align-items-center" style="gap:8px;">
+                <a href="{{ route('display.stats', $tournament->slug) }}"
+                   class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-chart-bar mr-1"></i> Statistics
+                </a>
+                <span class="navbar-text text-muted" style="font-size:13px;">
+                    Stage {{ $selectedStage ?? '–' }}
+                </span>
+            </div>
         </div>
     </nav>
 
