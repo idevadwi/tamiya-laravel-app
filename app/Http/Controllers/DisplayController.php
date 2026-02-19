@@ -87,7 +87,8 @@ class DisplayController extends Controller
 
         // Top 6 Teams with most races in next stage
         $topTeams = Race::where('tournament_id', $tournament->id)
-            ->where('stage', $nextStage)
+            // ->where('stage', $nextStage)
+            ->where('stage', 2)
             ->join('teams', 'races.team_id', '=', 'teams.id')
             ->select('teams.team_name', \Illuminate\Support\Facades\DB::raw('count(*) as total'))
             ->groupBy('teams.id', 'teams.team_name')
