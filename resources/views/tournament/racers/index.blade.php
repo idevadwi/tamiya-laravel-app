@@ -108,7 +108,7 @@
                 </thead>
                 <tbody>
                     @forelse($racers as $racer)
-                        <tr>
+                        <tr data-racer-id="{{ $racer->id }}">
                             <td>{{ $racer->racer_name }}</td>
                             <td>
                                 @if($racer->team)
@@ -135,19 +135,13 @@
                                         class="btn btn-sm btn-warning ml-2" title="Edit">
                                         <i class="fas fa-edit"></i> Edit
                                     </a>
-                                    <form action="{{ route('tournament.racers.destroy', $racer->id) }}" method="POST"
-                                        class="d-inline ml-2"
-                                        id="delete-form-{{ $racer->id }}">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="button"
-                                                class="btn btn-sm btn-danger btn-delete"
-                                                title="Delete"
-                                                data-form-id="delete-form-{{ $racer->id }}"
-                                                data-item="{{ $racer->racer_name }}">
-                                            <i class="fas fa-trash"></i> Delete
-                                        </button>
-                                    </form>
+                                    <button type="button"
+                                            class="btn btn-sm btn-danger btn-delete ml-2"
+                                            title="Delete"
+                                            data-racer-id="{{ $racer->id }}"
+                                            data-item="{{ $racer->racer_name }}">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </button>
                                 </div>
                             </td>
                         </tr>
@@ -212,21 +206,81 @@
 @stop
 
 @section('js')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-    var pendingFormId = null;
+    var pendingRacerId = null;
 
     document.querySelectorAll('.btn-delete').forEach(function (btn) {
         btn.addEventListener('click', function () {
-            pendingFormId = this.getAttribute('data-form-id');
+            pendingRacerId = this.getAttribute('data-racer-id');
             document.getElementById('deleteItemName').textContent = this.getAttribute('data-item');
             $('#deleteModal').modal('show');
         });
     });
 
     document.getElementById('confirmDeleteBtn').addEventListener('click', function () {
-        if (pendingFormId) {
-            document.getElementById(pendingFormId).submit();
-        }
+        if (!pendingRacerId) return;
+
+        const confirmBtn = document.getElementById('confirmDeleteBtn');
+        const originalHtml = confirmBtn.innerHTML;
+
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+
+        $.ajax({
+            url: '/tournament/racers/' + pendingRacerId,
+            type: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function (response) {
+                $('#deleteModal').modal('hide');
+                confirmBtn.disabled = false;
+                confirmBtn.innerHTML = originalHtml;
+
+                if (response.success) {
+                    $('tr[data-racer-id="' + pendingRacerId + '"]').fadeOut(300, function () {
+                        $(this).remove();
+
+                        if ($('tbody tr:visible').length === 0) {
+                            $('tbody').html(
+                                '<tr><td colspan="4" class="text-center">No racers found in this tournament.</td></tr>'
+                            );
+                        }
+                    });
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Removed!',
+                        text: response.message || 'Racer removed from tournament successfully!',
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: response.message || 'An error occurred.'
+                    });
+                }
+
+                pendingRacerId = null;
+            },
+            error: function (xhr) {
+                $('#deleteModal').modal('hide');
+                confirmBtn.disabled = false;
+                confirmBtn.innerHTML = originalHtml;
+
+                const message = xhr.responseJSON?.message || 'An error occurred while deleting.';
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: message
+                });
+
+                pendingRacerId = null;
+            }
+        });
     });
 </script>
 @stop

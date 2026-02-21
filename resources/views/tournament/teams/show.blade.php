@@ -153,7 +153,7 @@
                     <input type="hidden" name="team_id" value="{{ $team->id }}">
 
                     @php
-                        $currentRacerCount = $racers->count();
+                        $currentRacerCount = count($activeRacerIds);
                         $maxRacersPerTeam = $tournament->max_racer_per_team ?? 1;
                         $canAddMore = $currentRacerCount < $maxRacersPerTeam;
                     @endphp
@@ -161,19 +161,20 @@
                     @if(!$canAddMore)
                         <div class="alert alert-warning" role="alert">
                             <i class="fas fa-exclamation-triangle"></i>
-                            <strong>Limit Reached!</strong> This team has reached the maximum limit of
-                            <strong>{{ $maxRacersPerTeam }}</strong> racer(s) per team.
+                            <strong>Limit Reached!</strong> This team already has
+                            <strong>{{ $currentRacerCount }}</strong> active racer(s), which meets the maximum limit of
+                            <strong>{{ $maxRacersPerTeam }}</strong> per team.
                             You cannot add more racers to this team.
                         </div>
                     @else
                         <div class="alert alert-info" role="alert">
                             <i class="fas fa-info-circle"></i>
-                            Team has <strong>{{ $currentRacerCount }}</strong> of <strong>{{ $maxRacersPerTeam }}</strong>
-                            racer(s).
+                            Team has <strong>{{ $currentRacerCount }}</strong> active of <strong>{{ $maxRacersPerTeam }}</strong>
+                            allowed racer(s).
                             @if($maxRacersPerTeam - $currentRacerCount == 1)
-                                <strong>1 more racer</strong> can be added.
+                                <strong>1 more active racer</strong> can be added.
                             @else
-                                <strong>{{ $maxRacersPerTeam - $currentRacerCount }} more racers</strong> can be added.
+                                <strong>{{ $maxRacersPerTeam - $currentRacerCount }} more active racers</strong> can be added.
                             @endif
                         </div>
                     @endif
