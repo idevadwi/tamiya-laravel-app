@@ -130,6 +130,8 @@ Route::middleware(['auth', 'role.web:ADMINISTRATOR,MODERATOR', 'tournament.conte
     // but the plan implied restructuring. For now, let's keep specific data (Team/Racer/Card) separate.
     // The user ONLY asked for split of Master Data (Team, Racer, Cards).
 
+    Route::get('/races/last-input-preview', [\App\Http\Controllers\RaceController::class, 'lastInputPreview'])->name('races.lastInputPreview');
+    Route::delete('/races/delete-last-input', [\App\Http\Controllers\RaceController::class, 'deleteLastInput'])->name('races.deleteLastInput');
     Route::resource('races', \App\Http\Controllers\RaceController::class);
     Route::post('/races/toggle-called', [\App\Http\Controllers\RaceController::class, 'toggleCalled'])->name('races.toggleCalled');
     Route::post('/races/balance', [\App\Http\Controllers\RaceController::class, 'balanceRaces'])->name('races.balance');

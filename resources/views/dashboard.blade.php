@@ -187,6 +187,10 @@
                 {{-- <a href="{{ route('tournament.best_times.index') }}" class="btn btn-secondary btn-block mb-2">
                     <i class="fas fa-stopwatch"></i> {{ __('messages.manage_best_times') }}
                 </a> --}}
+                <button type="button" class="btn btn-outline-danger btn-block mb-2" data-toggle="modal"
+                    data-target="#deleteLastRaceModal">
+                    <i class="fas fa-trash-alt"></i> {{ __('messages.delete_last_input_race') }}
+                </button>
                 <button type="button" class="btn btn-outline-primary btn-block mb-2" data-toggle="modal"
                     data-target="#shareLinksModal">
                     <i class="fas fa-share-alt"></i> {{ __('messages.share_links') }}
@@ -548,6 +552,65 @@
     </div>
 </div>
 
+<!-- Delete Last Input Race Modal -->
+<div class="modal fade" id="deleteLastRaceModal" tabindex="-1" role="dialog" aria-labelledby="deleteLastRaceLabel"
+    aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteLastRaceLabel">
+                    <i class="fas fa-trash-alt text-danger"></i> {{ __('messages.delete_last_input_race') }}
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="{{ __('messages.close') }}">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="deleteLastRaceLoading" class="text-center py-3">
+                    <i class="fas fa-spinner fa-spin fa-2x"></i>
+                    <p class="mt-2 text-muted">{{ __('messages.loading') }}...</p>
+                </div>
+                <div id="deleteLastRaceInfo" style="display:none;">
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>{{ __('messages.warning') }}:</strong>
+                        {{ __('messages.delete_last_race_warning') }}
+                    </div>
+                    <table class="table table-bordered">
+                        <tr>
+                            <th width="40%">{{ __('messages.current_stage') }}</th>
+                            <td><span id="dlr-stage" class="badge badge-primary" style="font-size:1em;"></span></td>
+                        </tr>
+                        <tr>
+                            <th>{{ __('messages.race_no') }}</th>
+                            <td id="dlr-race-no"></td>
+                        </tr>
+                        <tr>
+                            <th>{{ __('messages.track') }}</th>
+                            <td id="dlr-track"></td>
+                        </tr>
+                        <tr>
+                            <th>{{ __('messages.lane') }}</th>
+                            <td id="dlr-lane"></td>
+                        </tr>
+                        <tr>
+                            <th>{{ __('messages.team') }}</th>
+                            <td><strong id="dlr-team"></strong></td>
+                        </tr>
+                    </table>
+                </div>
+                <div id="deleteLastRaceError" class="alert alert-warning" style="display:none;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">{{ __('messages.cancel') }}</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteLastRaceBtn" disabled>
+                    <i class="fas fa-trash-alt"></i> {{ __('messages.delete') }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Confirm Next Session Modal -->
 <div class="modal fade" id="confirmNextSessionModal" tabindex="-1" role="dialog" aria-labelledby="confirmNextSessionLabel"
     aria-hidden="true">
@@ -791,6 +854,71 @@
         $('#qrCodeModal').on('hidden.bs.modal', function() {
             document.getElementById('qrcode').innerHTML = '';
             qrCodeInstance = null;
+        });
+
+        // Delete Last Input Race Modal
+        $('#deleteLastRaceModal').on('show.bs.modal', function () {
+            $('#deleteLastRaceLoading').show();
+            $('#deleteLastRaceInfo').hide();
+            $('#deleteLastRaceError').hide();
+            $('#confirmDeleteLastRaceBtn').prop('disabled', true);
+
+            $.ajax({
+                url: '{{ route("tournament.races.lastInputPreview") }}',
+                method: 'GET',
+                success: function (data) {
+                    $('#dlr-stage').text(data.stage);
+                    $('#dlr-race-no').text(data.race_no);
+                    $('#dlr-track').text(data.track);
+                    $('#dlr-lane').text(data.lane);
+                    $('#dlr-team').text(data.team_name);
+                    $('#deleteLastRaceLoading').hide();
+                    $('#deleteLastRaceInfo').show();
+                    $('#confirmDeleteLastRaceBtn').prop('disabled', false);
+                },
+                error: function (xhr) {
+                    var msg = (xhr.responseJSON && xhr.responseJSON.error) ? xhr.responseJSON.error : 'Failed to load race info.';
+                    $('#deleteLastRaceLoading').hide();
+                    $('#deleteLastRaceError').text(msg).show();
+                }
+            });
+        });
+
+        $('#confirmDeleteLastRaceBtn').on('click', function () {
+            var btn = $(this);
+            btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Deleting...');
+
+            $.ajax({
+                url: '{{ route("tournament.races.deleteLastInput") }}',
+                method: 'DELETE',
+                data: { _token: '{{ csrf_token() }}' },
+                success: function (response) {
+                    $('#deleteLastRaceModal').modal('hide');
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Deleted!',
+                        text: response.success,
+                        confirmButtonColor: '#28a745',
+                        confirmButtonText: 'OK'
+                    }).then(function () {
+                        location.reload();
+                    });
+                },
+                error: function (xhr) {
+                    var errorMsg = 'An error occurred';
+                    if (xhr.responseJSON && xhr.responseJSON.error) {
+                        errorMsg = xhr.responseJSON.error;
+                    }
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: errorMsg,
+                        confirmButtonColor: '#dc3545',
+                        confirmButtonText: 'OK'
+                    });
+                    btn.prop('disabled', false).html('<i class="fas fa-trash-alt"></i> {{ __("messages.delete") }}');
+                }
+            });
         });
 
         // Handle next session form submission
