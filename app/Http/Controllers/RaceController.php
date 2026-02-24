@@ -6,6 +6,7 @@ use App\Models\Race;
 use App\Models\Card;
 use App\Models\Racer;
 use App\Models\Team;
+use App\Models\TournamentCardAssignment;
 use App\Models\TournamentParticipant;
 use App\Helpers\AblyHelper;
 use Illuminate\Http\Request;
@@ -130,9 +131,13 @@ class RaceController extends Controller
                 ->with('error', 'Please select a tournament first.');
         }
 
-        // Get cards in the active tournament for the Add Race modal
+        // Get cards assigned in the active tournament for the Add Race modal
         $racerIds = Racer::whereIn('team_id', $data['teamIds'])->pluck('id');
-        $data['cards'] = Card::whereIn('racer_id', $racerIds)
+        $assignedCardIds = TournamentCardAssignment::where('tournament_id', $data['tournament']->id)
+            ->whereIn('racer_id', $racerIds)
+            ->where('status', 'ACTIVE')
+            ->pluck('card_id');
+        $data['cards'] = Card::whereIn('id', $assignedCardIds)
             ->where('status', 'ACTIVE')
             ->with(['racer.team'])
             ->orderBy('card_code')
@@ -177,7 +182,11 @@ class RaceController extends Controller
 
         $racerIds = Racer::whereIn('team_id', $teamIds)->pluck('id');
 
-        $cards = Card::whereIn('racer_id', $racerIds)
+        $assignedCardIds = TournamentCardAssignment::where('tournament_id', $tournament->id)
+            ->whereIn('racer_id', $racerIds)
+            ->where('status', 'ACTIVE')
+            ->pluck('card_id');
+        $cards = Card::whereIn('id', $assignedCardIds)
             ->where('status', 'ACTIVE')
             ->with(['racer.team'])
             ->orderBy('card_code')

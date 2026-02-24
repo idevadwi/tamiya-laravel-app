@@ -8,6 +8,7 @@ use App\Models\Team;
 use App\Models\TournamentParticipant;
 use App\Models\TournamentRacerParticipant;
 use App\Models\Card;
+use App\Models\TournamentCardAssignment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -218,11 +219,14 @@ class RacerController extends Controller
                 'is_active' => true,
             ]);
 
-            // Handle Card — assign existing card to this racer
+            // Handle Card — create tournament card assignment for this racer
             if ($request->card_id) {
-                Card::where('id', $request->card_id)->update([
-                    'racer_id' => $racer->id,
-                    'status' => 'ACTIVE',
+                TournamentCardAssignment::create([
+                    'tournament_id' => $tournament->id,
+                    'card_id'       => $request->card_id,
+                    'racer_id'      => $racer->id,
+                    'status'        => 'ACTIVE',
+                    'created_by'    => auth()->id(),
                 ]);
             }
 
@@ -254,15 +258,17 @@ class RacerController extends Controller
 
             // Unassign previous card if it changed
             if ($request->current_card_id && $request->current_card_id !== $request->card_id) {
-                Card::where('id', $request->current_card_id)->update(['racer_id' => null]);
+                TournamentCardAssignment::where('tournament_id', $tournament->id)
+                    ->where('card_id', $request->current_card_id)
+                    ->delete();
             }
 
-            // Assign selected card to racer
+            // Assign selected card to racer in this tournament
             if ($request->card_id) {
-                Card::where('id', $request->card_id)->update([
-                    'racer_id' => $racer->id,
-                    'status' => 'ACTIVE',
-                ]);
+                TournamentCardAssignment::updateOrCreate(
+                    ['tournament_id' => $tournament->id, 'card_id' => $request->card_id],
+                    ['racer_id' => $racer->id, 'status' => 'ACTIVE', 'updated_by' => auth()->id()]
+                );
             }
 
             return response()->json(['success' => true, 'message' => 'Racer updated successfully!']);

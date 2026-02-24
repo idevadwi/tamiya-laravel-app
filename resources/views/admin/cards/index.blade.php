@@ -109,10 +109,8 @@
                             </th>
                             <th><a href="{{ $sortUrl('card_no') }}" class="text-dark">{!! $sortIcon('card_no') !!} Card No</a></th>
                             <th><a href="{{ $sortUrl('card_code') }}" class="text-dark">{!! $sortIcon('card_code') !!} Card Code</a></th>
-                            <th>Racer</th>
-                            <th>Team</th>
                             <th><a href="{{ $sortUrl('status') }}" class="text-dark">{!! $sortIcon('status') !!} Status</a></th>
-                            {{-- <th>Coupons</th> --}}
+                            <th>Tournaments Used</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -131,33 +129,23 @@
                                 </td>
                                 <td>{{ $card->card_code }}</td>
                                 <td>
-                                    @if($card->racer)
-                                        <a href="{{ route('admin.racers.show', $card->racer_id) }}">
-                                            {{ $card->racer->racer_name }}
-                                        </a>
-                                    @else
-                                        <span class="text-muted">Unassigned</span>
-                                    @endif
-                                </td>
-                                <td>
-                                    @if($card->racer && $card->racer->team)
-                                        <a href="{{ route('admin.teams.show', $card->racer->team_id) }}">
-                                            {{ $card->racer->team->team_name }}
-                                        </a>
-                                    @else
-                                        -
-                                    @endif
-                                </td>
-                                <td>
                                     <span class="badge badge-{{ $card->status == 'ACTIVE' ? 'success' : ($card->status == 'BANNED' ? 'danger' : 'warning') }}">
                                         {{ $card->status }}
                                     </span>
                                 </td>
-                                {{-- <td>{{ $card->coupon }}</td> --}}
+                                <td>
+                                    <span class="badge badge-secondary">
+                                        {{ $card->tournamentAssignments->count() }}
+                                    </span>
+                                </td>
                                 <td>
                                     <div class="btn-group" role="group">
-                                        <a href="{{ route('admin.cards.edit', $card->id) }}" 
-                                           class="btn btn-sm btn-warning" title="Edit">
+                                        <a href="{{ route('admin.cards.show', $card->id) }}"
+                                           class="btn btn-sm btn-info" title="Detail">
+                                            <i class="fas fa-eye"></i> Detail
+                                        </a>
+                                        <a href="{{ route('admin.cards.edit', $card->id) }}"
+                                           class="btn btn-sm btn-warning ml-1" title="Edit">
                                             <i class="fas fa-edit"></i> Edit
                                         </a>
                                         <form action="{{ route('admin.cards.destroy', $card->id) }}"
@@ -179,7 +167,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center">
+                                <td colspan="6" class="text-center">
                                     No cards found.
                                     <a href="{{ route('admin.cards.create') }}">Create one now</a>.
                                 </td>

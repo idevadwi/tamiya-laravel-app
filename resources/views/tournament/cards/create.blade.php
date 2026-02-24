@@ -5,7 +5,7 @@
 @section('content_header')
 <div class="d-flex justify-content-between align-items-center">
     <div>
-        <h1>Create New Card</h1>
+        <h1>Assign Card</h1>
         <p class="text-muted mb-0">Tournament: <strong>{{ $tournament->tournament_name }}</strong></p>
     </div>
     <a href="{{ route('tournament.cards.index') }}" class="btn btn-default">
@@ -45,7 +45,7 @@
                             </span>
                         @enderror
                         <small class="form-text text-muted">
-                            Only unassigned cards are shown
+                            Only cards not yet assigned in this tournament are shown (can be reused from previous tournaments)
                         </small>
                     </div>
                 </div>
@@ -78,7 +78,7 @@
         </div>
         <div class="card-footer">
             <button type="submit" class="btn btn-primary">
-                <i class="fas fa-save"></i> Create Card
+                <i class="fas fa-save"></i> Assign Card
             </button>
             <a href="{{ route('tournament.cards.index') }}" class="btn btn-default">
                 <i class="fas fa-times"></i> Cancel

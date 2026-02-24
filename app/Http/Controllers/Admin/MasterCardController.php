@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Card;
-use App\Models\Racer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -15,11 +14,11 @@ class MasterCardController extends Controller
      */
     public function index(Request $request)
     {
-        // Build query for all cards
-        $query = Card::with('racer.team');
+        $query = Card::withCount('tournamentAssignments')
+            ->with('tournamentAssignments');
 
-        // Filter by card code search
-        if ($request->has('search') && $request->search) {
+        // Filter by card code / card no search
+        if ($request->filled('search')) {
             $query->where(function ($q) use ($request) {
                 $q->where('card_code', 'like', '%' . $request->search . '%')
                   ->orWhere('card_no', 'like', '%' . $request->search . '%');
@@ -27,26 +26,18 @@ class MasterCardController extends Controller
         }
 
         // Filter by status
-        if ($request->has('status') && $request->status) {
+        if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
-        // Filter by racer
-        if ($request->has('racer_id') && $request->racer_id) {
-            $query->where('racer_id', $request->racer_id);
-        }
-
         $allowedSorts = ['card_no', 'card_code', 'status', 'created_at'];
-        $sort = in_array($request->sort, $allowedSorts) ? $request->sort : 'card_no';
+        $sort      = in_array($request->sort, $allowedSorts) ? $request->sort : 'card_no';
         $direction = in_array($request->direction, ['asc', 'desc']) ? $request->direction : 'asc';
 
         $cards = $query->orderBy($sort, $direction)->paginate(15);
         $cards->appends($request->query());
 
-        // Get all racers for filter dropdown
-        $racers = Racer::with('team')->orderBy('racer_name')->get();
-
-        return view('admin.cards.index', compact('cards', 'racers'));
+        return view('admin.cards.index', compact('cards'));
     }
 
     /**
@@ -54,33 +45,27 @@ class MasterCardController extends Controller
      */
     public function create()
     {
-        // Get all racers for selection
-        $racers = Racer::with('team')->orderBy('racer_name')->get();
-
-        return view('admin.cards.create', compact('racers'));
+        return view('admin.cards.create');
     }
 
     /**
-     * Store a newly created card (global, can be assigned to any racer).
+     * Store a newly created card (global master data, not assigned to any racer).
      */
     public function store(Request $request)
     {
         $validated = $request->validate([
             'card_code' => 'required|string|max:255|unique:cards,card_code',
-            'card_no' => 'nullable|string|max:5|unique:cards,card_no',
-            'racer_id' => 'nullable|exists:racers,id',
-            'status' => 'required|in:ACTIVE,LOST,BANNED',
-            'coupon' => 'nullable|integer|min:0',
+            'card_no'   => 'nullable|string|max:5|unique:cards,card_no',
+            'status'    => 'required|in:ACTIVE,LOST,BANNED',
+            'coupon'    => 'nullable|integer|min:0',
         ]);
 
-        // Create the card
-        $card = Card::create([
-            'id' => Str::uuid(),
-            'card_code' => $validated['card_code'],
-            'card_no' => $validated['card_no'] ?? null,
-            'racer_id' => $validated['racer_id'] ?? null,
-            'status' => $validated['status'],
-            'coupon' => $validated['coupon'] ?? 0,
+        Card::create([
+            'id'         => Str::uuid(),
+            'card_code'  => $validated['card_code'],
+            'card_no'    => $validated['card_no'] ?? null,
+            'status'     => $validated['status'],
+            'coupon'     => $validated['coupon'] ?? 0,
             'created_by' => auth()->id(),
         ]);
 
@@ -89,11 +74,14 @@ class MasterCardController extends Controller
     }
 
     /**
-     * Display the specified card.
+     * Display the specified card with its tournament usage history.
      */
     public function show(Card $card)
     {
-        $card->load(['racer.team', 'couponHistory']);
+        $card->load([
+            'tournamentAssignments.tournament',
+            'tournamentAssignments.racer.team',
+        ]);
 
         return view('admin.cards.show', compact('card'));
     }
@@ -103,10 +91,7 @@ class MasterCardController extends Controller
      */
     public function edit(Card $card)
     {
-        // Get all racers for selection
-        $racers = Racer::with('team')->orderBy('racer_name')->get();
-
-        return view('admin.cards.edit', compact('card', 'racers'));
+        return view('admin.cards.edit', compact('card'));
     }
 
     /**
@@ -116,14 +101,18 @@ class MasterCardController extends Controller
     {
         $validated = $request->validate([
             'card_code' => 'required|string|max:255|unique:cards,card_code,' . $card->id,
-            'card_no' => 'nullable|string|max:5|unique:cards,card_no,' . $card->id,
-            'racer_id' => 'nullable|exists:racers,id',
-            'status' => 'required|in:ACTIVE,LOST,BANNED',
-            'coupon' => 'nullable|integer|min:0',
+            'card_no'   => 'nullable|string|max:5|unique:cards,card_no,' . $card->id,
+            'status'    => 'required|in:ACTIVE,LOST,BANNED',
+            'coupon'    => 'nullable|integer|min:0',
         ]);
 
-        $validated['updated_by'] = auth()->id();
-        $card->update($validated);
+        $card->update([
+            'card_code'  => $validated['card_code'],
+            'card_no'    => $validated['card_no'] ?? null,
+            'status'     => $validated['status'],
+            'coupon'     => $validated['coupon'] ?? $card->coupon,
+            'updated_by' => auth()->id(),
+        ]);
 
         return redirect()->route('admin.cards.index')
             ->with('success', 'Card updated successfully.');
@@ -172,19 +161,17 @@ class MasterCardController extends Controller
     {
         $validated = $request->validate([
             'card_codes' => 'required|string',
-            'status' => 'required|in:ACTIVE,LOST,BANNED',
+            'status'     => 'required|in:ACTIVE,LOST,BANNED',
         ]);
 
-        // Split card codes by new line or comma
         $cardCodes = preg_split('/[\r\n,]+/', $validated['card_codes']);
         $cardCodes = array_filter(array_map('trim', $cardCodes));
 
         $created = 0;
         $skipped = 0;
-        $errors = [];
+        $errors  = [];
 
         foreach ($cardCodes as $cardCode) {
-            // Check if card already exists
             if (Card::where('card_code', $cardCode)->exists()) {
                 $skipped++;
                 $errors[] = "Card '{$cardCode}' already exists";
@@ -192,11 +179,10 @@ class MasterCardController extends Controller
             }
 
             Card::create([
-                'id' => Str::uuid(),
-                'card_code' => $cardCode,
-                'racer_id' => null,
-                'status' => $validated['status'],
-                'coupon' => 0,
+                'id'         => Str::uuid(),
+                'card_code'  => $cardCode,
+                'status'     => $validated['status'],
+                'coupon'     => 0,
                 'created_by' => auth()->id(),
             ]);
 

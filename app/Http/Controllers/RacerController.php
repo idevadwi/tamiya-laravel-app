@@ -445,11 +445,11 @@ class RacerController extends Controller
             }
         }
 
-        // Count cards for the message
-        $cardCount = $racer->cards()->count();
-        
-        // Delete all associated cards
-        $racer->cards()->delete();
+        // Count card assignments for the message
+        $cardCount = $racer->cardAssignments()->count();
+
+        // Remove all card assignments for this racer (physical cards are not deleted)
+        $racer->cardAssignments()->delete();
 
         // Delete image if exists
         if ($racer->image && Storage::disk('public')->exists($racer->image)) {

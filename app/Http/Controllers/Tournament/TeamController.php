@@ -220,9 +220,13 @@ class TeamController extends Controller
             ->pluck('racer_id')
             ->toArray();
 
-        // Get cards with card_no that are not yet assigned to any racer
+        // Get cards with card_no that are not yet assigned in this tournament
+        $assignedCardIds = \App\Models\TournamentCardAssignment::where('tournament_id', $tournament->id)
+            ->pluck('card_id');
+
         $availableCards = Card::whereNotNull('card_no')
-            ->whereNull('racer_id')
+            ->whereNotIn('id', $assignedCardIds)
+            ->where('status', 'ACTIVE')
             ->orderBy('card_no')
             ->get();
 

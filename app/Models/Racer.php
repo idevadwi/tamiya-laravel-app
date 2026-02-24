@@ -19,9 +19,25 @@ class Racer extends Model
         return $this->belongsTo(Team::class);
     }
 
+    public function cardAssignments()
+    {
+        return $this->hasMany(TournamentCardAssignment::class);
+    }
+
+    /**
+     * Get all cards ever assigned to this racer (across all tournaments).
+     * Provides backward-compatible $racer->cards, withCount('cards'), with('cards').
+     */
     public function cards()
     {
-        return $this->hasMany(Card::class);
+        return $this->hasManyThrough(
+            Card::class,
+            TournamentCardAssignment::class,
+            'racer_id', // FK on tournament_card_assignments → racers
+            'id',       // PK on cards
+            'id',       // PK on racers (local key)
+            'card_id'   // FK on tournament_card_assignments → cards
+        );
     }
 
     public function races()

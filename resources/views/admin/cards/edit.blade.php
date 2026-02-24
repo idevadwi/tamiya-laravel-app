@@ -48,22 +48,6 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="racer_id">Assign to Racer (Optional)</label>
-                        <select class="form-control select2 @error('racer_id') is-invalid @enderror" id="racer_id"
-                            name="racer_id">
-                            <option value="">Unassigned</option>
-                            @foreach($racers as $racer)
-                                <option value="{{ $racer->id }}" {{ old('racer_id', $card->racer_id) == $racer->id ? 'selected' : '' }}>
-                                    {{ $racer->racer_name }}
-                                    @if($racer->team)
-                                        ({{ $racer->team->team_name }})
-                                    @endif
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div class="form-group">
                         <label for="status">Status</label>
                         <select class="form-control" name="status">
                             <option value="ACTIVE" {{ old('status', $card->status) == 'ACTIVE' ? 'selected' : '' }}>ACTIVE
@@ -94,11 +78,4 @@
 @stop
 
 @section('js')
-<script>
-    $(document).ready(function () {
-        $('.select2').select2({
-            theme: 'bootstrap4'
-        });
-    });
-</script>
 @stop
