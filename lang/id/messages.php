@@ -69,6 +69,11 @@ return [
     'balance_races_message' => 'Ini akan mendistribusikan ulang tim dari race yang terlalu banyak lajur ke race yang terlalu sedikit lajur. Pilih babak untuk diseimbangkan:',
     'convert_to_single_track_title' => 'Konversi ke 1 Lintasan',
     'convert_to_single_track_message' => 'Ini akan mengubah semua balapan di babak yang dipilih untuk menggunakan hanya 1 lintasan (Lintasan 1 dengan jalur A, B, C). Semua pembalap akan didistribusikan ulang ke balapan baru. Tindakan ini tidak dapat dibatalkan.',
+    'delete_last_input_race' => 'Hapus Input Race Terakhir',
+    'delete_last_race_warning' => 'Anda akan menghapus secara permanen race yang terakhir diinput di bawah ini. Tindakan ini tidak dapat dibatalkan.',
+    'race_no' => 'No Race',
+    'lane' => 'Jalur',
+    'loading' => 'Memuat',
     
     // Common
     'close' => 'Tutup',

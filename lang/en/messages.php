@@ -70,6 +70,11 @@ return [
     'balance_races_message' => 'This will redistribute teams from races with too many lanes to races with too few lanes. Select the stage to balance:',
     'convert_to_single_track_title' => 'Convert to 1 Track',
     'convert_to_single_track_message' => 'This will convert all races in the selected stage to use only 1 track (Track 1 with lanes A, B, C). All racers will be redistributed into new races. This action cannot be undone.',
+    'delete_last_input_race' => 'Delete Last Input Race',
+    'delete_last_race_warning' => 'You are about to permanently delete the last inputted race below. This action cannot be undone.',
+    'race_no' => 'Race No',
+    'lane' => 'Lane',
+    'loading' => 'Loading',
     
     // Common
     'close' => 'Close',

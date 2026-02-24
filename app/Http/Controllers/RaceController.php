@@ -388,6 +388,66 @@ class RaceController extends Controller
     }
 
     /**
+     * Preview the last inputted race in the current stage for the active tournament.
+     */
+    public function lastInputPreview()
+    {
+        $tournament = getActiveTournament();
+
+        if (!$tournament) {
+            return response()->json(['error' => 'No active tournament'], 400);
+        }
+
+        $stage = $tournament->current_stage + 1;
+
+        $lastRace = Race::where('tournament_id', $tournament->id)
+            ->where('stage', $stage)
+            ->with('team')
+            ->orderBy('created_at', 'DESC')
+            ->first();
+
+        if (!$lastRace) {
+            return response()->json(['error' => 'No races found in Stage ' . $stage], 404);
+        }
+
+        return response()->json([
+            'stage'     => $stage,
+            'race_no'   => $lastRace->race_no,
+            'track'     => $lastRace->track,
+            'lane'      => $lastRace->lane,
+            'team_name' => $lastRace->team->team_name ?? 'N/A',
+        ]);
+    }
+
+    /**
+     * Delete the last inputted race in the current stage for the active tournament.
+     */
+    public function deleteLastInput()
+    {
+        $tournament = getActiveTournament();
+
+        if (!$tournament) {
+            return response()->json(['error' => 'No active tournament'], 400);
+        }
+
+        $stage = $tournament->current_stage + 1;
+
+        $lastRace = Race::where('tournament_id', $tournament->id)
+            ->where('stage', $stage)
+            ->orderBy('created_at', 'DESC')
+            ->first();
+
+        if (!$lastRace) {
+            return response()->json(['error' => 'No races found in Stage ' . $stage], 404);
+        }
+
+        $info = "Stage {$stage}, Race No {$lastRace->race_no}, Track {$lastRace->track}, Lane {$lastRace->lane}";
+        $lastRace->delete();
+
+        return response()->json(['success' => 'Last race deleted: ' . $info]);
+    }
+
+    /**
      * Balance races by ensuring the last race has at least 2 lanes per track.
      * Moves teams from the previous race if needed.
      */
