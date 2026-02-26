@@ -173,6 +173,8 @@ Route::prefix('{slug}')->group(function () {
     Route::get('/best-race', [App\Http\Controllers\DisplayController::class, 'bestRace'])->name('display.best-race');
     Route::get('/track-{track}', [App\Http\Controllers\DisplayController::class, 'track'])->name('display.track')
         ->where('track', '[1-9]');
+    Route::get('/track-v2-{track}', [App\Http\Controllers\DisplayController::class, 'trackV2'])->name('display.track-v2')
+        ->where('track', '[1-9]');
     Route::get('/races', [App\Http\Controllers\DisplayController::class, 'races'])->name('display.races');
     Route::get('/stats', [App\Http\Controllers\DisplayController::class, 'stats'])->name('display.stats');
 });

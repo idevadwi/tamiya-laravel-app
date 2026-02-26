@@ -108,17 +108,17 @@
                         <td>
                             <div class="btn-group" role="group">
                                 <a href="{{ route('admin.scanner-devices.show', $device->id) }}" class="btn btn-sm btn-info" title="View">
-                                    <i class="fas fa-eye"></i>
+                                    <i class="fas fa-eye"></i> Details
                                 </a>
-                                <a href="{{ route('admin.scanner-devices.edit', $device->id) }}" class="btn btn-sm btn-warning" title="Edit">
-                                    <i class="fas fa-edit"></i>
+                                <a href="{{ route('admin.scanner-devices.edit', $device->id) }}" class="btn btn-sm btn-warning ml-2" title="Edit">
+                                    <i class="fas fa-edit"></i> Edit
                                 </a>
-                                <form action="{{ route('admin.scanner-devices.destroy', $device->id) }}" method="POST" class="d-inline"
+                                <form action="{{ route('admin.scanner-devices.destroy', $device->id) }}" method="POST" class="d-inline ml-2"
                                     onsubmit="return confirm('Delete this device?');">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="btn btn-sm btn-danger" title="Delete">
-                                        <i class="fas fa-trash"></i>
+                                        <i class="fas fa-trash"></i> Delete
                                     </button>
                                 </form>
                             </div>

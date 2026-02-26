@@ -29,6 +29,18 @@ class DisplayController extends Controller
         return view('display.track', compact('tournament', 'trackNumber'));
     }
 
+    public function trackV2($slug, $trackNumber)
+    {
+        $tournament = Tournament::where('slug', $slug)->firstOrFail();
+
+        // Validate track number
+        if ($trackNumber < 1 || $trackNumber > $tournament->track_number) {
+            abort(404);
+        }
+
+        return view('display.track-v2', compact('tournament', 'trackNumber'));
+    }
+
     public function races($slug, Request $request)
     {
         $tournament = Tournament::where('slug', $slug)->firstOrFail();

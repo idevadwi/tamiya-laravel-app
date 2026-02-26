@@ -145,7 +145,7 @@
                                             <i class="fas fa-eye"></i> Detail
                                         </a>
                                         <a href="{{ route('admin.cards.edit', $card->id) }}"
-                                           class="btn btn-sm btn-warning ml-1" title="Edit">
+                                           class="btn btn-sm btn-warning ml-2" title="Edit">
                                             <i class="fas fa-edit"></i> Edit
                                         </a>
                                         <form action="{{ route('admin.cards.destroy', $card->id) }}"

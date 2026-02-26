@@ -67,20 +67,20 @@
                                     <div class="btn-group" role="group">
                                         <a href="{{ route('users.show', $user->id) }}" 
                                            class="btn btn-sm btn-info" title="View">
-                                            <i class="fas fa-eye"></i>
+                                            <i class="fas fa-eye"></i> Details
                                         </a>
                                         <a href="{{ route('users.edit', $user->id) }}" 
-                                           class="btn btn-sm btn-warning" title="Edit">
-                                            <i class="fas fa-edit"></i>
+                                           class="btn btn-sm btn-warning ml-2" title="Edit">
+                                            <i class="fas fa-edit"></i> Edit
                                         </a>
                                         <form action="{{ route('users.destroy', $user->id) }}" 
                                               method="POST" 
-                                              class="d-inline"
+                                              class="d-inline ml-2"
                                               onsubmit="return confirm('Are you sure you want to delete this user?');">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="btn btn-sm btn-danger" title="Delete">
-                                                <i class="fas fa-trash"></i>
+                                                <i class="fas fa-trash"></i> Delete
                                             </button>
                                         </form>
                                     </div>

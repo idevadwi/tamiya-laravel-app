@@ -56,14 +56,24 @@
 
     #track-number  { top: 52px;   font-size: 180px; letter-spacing: 10px; }
 
-    #bto-time  { top: 550px; font-size: 150px; }
-    #bto-team  { top: 710px; font-size: 100px; }
-    
-    #limit-time { top: 1500px; font-size: 150px; }
-    
-    #session-number{ top: 880px; font-size: 80px; color: #000; letter-spacing: 20px;}
-    #session-time{ top: 1015px; font-size: 150px; }
-    #session-team{ top: 1170px; font-size: 100px; }
+    #bto-time      { padding-left: 380px; top: 320px;  font-size: 170px; }
+    #bto-team      { top: 520px;  font-size: 100px; }
+
+    #session-row {
+        position: absolute;
+        top: 740px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 100%;
+        display: flex;
+        align-items: center;
+        z-index: 1;
+    }
+    #session-number{ margin-left:120px; flex: 1; text-align: left; font-size: 80px;  color: #fff; font-weight: 700; text-shadow: 2px 2px 4px rgba(0,0,0,0.7); line-height: 1; }
+    #session-time  { flex: 1; text-align: left; font-size: 170px; margin-left:-260px; color: #fff; font-weight: 700; text-shadow: 2px 2px 4px rgba(0,0,0,0.7); line-height: 1; }
+    #session-team  { top: 930px; font-size: 100px; }
+
+    #limit-time    { top: 1235px; font-size: 285px; }
 
     .loading {
         position: absolute;
@@ -80,16 +90,18 @@
 
 @section('content')
 <div id="stage" class="stage">
-    <img src="/images/display/track-bg-v1.png" alt="Background" class="background-image" />
+    <img src="/images/display/track-bg-v2.png" alt="Background" class="background-image" />
     <div id="loading" class="loading">Loading...</div>
 
     <div id="track-number" class="overlay">TRACK {{ $trackNumber }}</div>
-    <div id="bto-time" class="overlay" >00:01</div>
-    <div id="bto-team" class="overlay">TEAM 1</div>
-    <div id="session-number" class="overlay">SESI 0</div>
-    <div id="session-time" class="overlay">00:02</div>
-    <div id="session-team" class="overlay">TEAM 2</div>
-    <div id="limit-time" class="overlay">00:03</div>
+    <div id="bto-time" class="overlay">00:00</div>
+    <div id="bto-team" class="overlay">TEAM A</div>
+    <div id="session-row">
+        <span id="session-number">SESI 0</span>
+        <span id="session-time">00:00</span>
+    </div>
+    <div id="session-team" class="overlay">TEAM B</div>
+    <div id="limit-time" class="overlay">00:00</div>
 </div>
 @endsection
 
@@ -98,12 +110,12 @@
     var tournamentSlug = '{{ $tournament->slug }}';
     var trackNumber = {{ $trackNumber }};
     var channelName = tournamentSlug + ':track-' + trackNumber;
-    var storageKey = 'track-' + trackNumber + '-' + tournamentSlug;
+    var storageKey = 'track-v2-' + trackNumber + '-' + tournamentSlug;
     var ablyKey = '{{ config("services.ably.key") }}';
-    
+
     var ably = null;
     var channel = null;
-    
+
     // Only initialize Ably if key is configured
     if (ablyKey && ablyKey !== '') {
         try {
@@ -115,12 +127,12 @@
     } else {
         console.warn('Ably key not configured. Real-time updates disabled.');
     }
-    
+
     // ========= SCALE TO SCREEN =========
     function fitStage() {
         var stage = document.getElementById('stage');
         if (!stage) return;
-        
+
         var vw = window.innerWidth;
         var vh = window.innerHeight;
         var overscan = 0.03;
@@ -148,7 +160,7 @@
     }
 
     fitStage();
-    
+
     // ========= DOM HELPERS =========
     function setText(id, value) {
         var element = document.getElementById(id);
@@ -156,14 +168,14 @@
             element.textContent = value || "";
         }
     }
-    
+
     function setDisplay(id, display) {
         var element = document.getElementById(id);
         if (element) {
             element.style.display = display;
         }
     }
-    
+
     function loadCachedData() {
         try {
             var cached = localStorage.getItem(storageKey);
@@ -175,7 +187,7 @@
             console.error('Cache load error:', e);
         }
     }
-    
+
     function fetchSnapshot() {
         var xhr = new XMLHttpRequest();
         xhr.open('GET', '/api/' + tournamentSlug + '/track-' + trackNumber + '/snapshot', true);
@@ -202,16 +214,16 @@
         };
         xhr.send();
     }
-    
+
     function renderStats(data) {
         // Hide loading
         setDisplay('loading', 'none');
-        
+
         // Handle BTO data
         setDisplay('bto-time', 'block');
         setDisplay('bto-team', 'block');
         setDisplay('limit-time', 'block');
-        
+
         if (data && data.bto) {
             setText('bto-time', escapeHtml(data.bto.TIMER));
             setText('bto-team', escapeHtml(data.bto.TEAM));
@@ -222,12 +234,11 @@
             setText('bto-team', 'TEAM A');
             setText('limit-time', '00:00');
         }
-        
+
         // Handle Session data
-        setDisplay('session-number', 'block');
-        setDisplay('session-time', 'block');
+        setDisplay('session-row', 'flex');
         setDisplay('session-team', 'block');
-        
+
         if (data && data.sesi) {
             setText('session-number', 'SESI ' + data.sesi.SESI);
             setText('session-time', escapeHtml(data.sesi.TIMER));
@@ -239,7 +250,7 @@
             setText('session-team', 'TEAM B');
         }
     }
-    
+
     function cacheData(data) {
         try {
             localStorage.setItem(storageKey, JSON.stringify(data));
@@ -247,13 +258,13 @@
             console.error('Cache save error:', e);
         }
     }
-    
+
     function escapeHtml(text) {
         var div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
     }
-    
+
     // ========= ABLY LIVE UPDATES =========
     if (ably && channel) {
         channel.subscribe('update', function(message) {
@@ -261,20 +272,20 @@
             renderStats(message.data);
             cacheData(message.data);
         });
-        
+
         ably.connection.on('connected', function() {
             console.log('Ably connected to track ' + trackNumber);
         });
-        
+
         ably.connection.on('disconnected', function() {
             console.log('Ably disconnected');
         });
     }
-    
+
     // ========= INITIAL LOAD =========
     loadCachedData();
     fetchSnapshot();
-    
+
     // ========= KEEP ALIVE FOR SMART TV =========
     setInterval(function() {}, 60000);
 </script>
