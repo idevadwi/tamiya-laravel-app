@@ -7,6 +7,7 @@ use App\Models\ScannerDevice;
 use App\Models\Race;
 use App\Models\Card;
 use App\Models\Racer;
+use App\Models\TournamentCardAssignment;
 use App\Models\TournamentParticipant;
 use App\Helpers\AblyHelper;
 use Illuminate\Http\Request;
@@ -105,7 +106,7 @@ class ScannerController extends Controller
                 ], 400);
             }
 
-            $card = Card::with('racer.team')->where('card_code', $request->card_code)->first();
+            $card = Card::where('card_code', $request->card_code)->first();
 
             if (!$card) {
                 return response()->json([
@@ -115,7 +116,13 @@ class ScannerController extends Controller
                 ], 404);
             }
 
-            if (!$card->racer_id) {
+            // Directly query the assignment for this tournament (avoids session-based getActiveTournament())
+            $assignment = TournamentCardAssignment::where('card_id', $card->id)
+                ->where('tournament_id', $tournament->id)
+                ->with('racer.team')
+                ->first();
+
+            if (!$assignment) {
                 return response()->json([
                     'success' => false,
                     'error_code' => 'CARD_NOT_ASSIGNED',
@@ -123,23 +130,8 @@ class ScannerController extends Controller
                 ], 400);
             }
 
-            $teamIds = TournamentParticipant::where('tournament_id', $tournament->id)
-                ->pluck('team_id');
-
-            $isValidRacer = Racer::whereIn('team_id', $teamIds)
-                ->where('id', $card->racer_id)
-                ->exists();
-
-            if (!$isValidRacer) {
-                return response()->json([
-                    'success' => false,
-                    'error_code' => 'RACER_NOT_IN_TOURNAMENT',
-                    'message' => 'Racer is not participating in this tournament.',
-                ], 400);
-            }
-
-            $racer = $card->racer;
-            $team = $racer->team;
+            $racer = $assignment->racer;
+            $team = $racer?->team;
 
             if (!$team) {
                 return response()->json([
