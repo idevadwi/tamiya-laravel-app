@@ -132,25 +132,37 @@ class DisplayController extends Controller
 
         $currentSession = $tournament->current_bto_session;
 
-        // Best Time Overall (BTO) for this track
+        // Best Time Overall (BTO) for this track - get the best (lowest) time
         $bto = BestTime::where('tournament_id', $tournament->id)
             ->where('scope', 'OVERALL')
             ->where('track', $trackNumber)
+            ->orderBy('timer', 'asc')
             ->with('team')
             ->first();
 
-        // Best Time Session for this track - get the latest session if current session has no data
+        // Best Time Session for this track - use current session, fallback to latest if empty
         $session = BestTime::where('tournament_id', $tournament->id)
             ->where('scope', 'SESSION')
             ->where('track', $trackNumber)
-            ->orderBy('session_number', 'desc')
+            ->where('session_number', $currentSession)
+            ->orderBy('timer', 'asc')
             ->with('team')
             ->first();
+
+        if (!$session) {
+            $session = BestTime::where('tournament_id', $tournament->id)
+                ->where('scope', 'SESSION')
+                ->where('track', $trackNumber)
+                ->orderBy('session_number', 'desc')
+                ->orderBy('timer', 'asc')
+                ->with('team')
+                ->first();
+        }
 
         $btoData = null;
         if ($bto) {
             $btoSeconds = $this->timerToSeconds($bto->timer);
-            $limitSeconds = $btoSeconds + 150; // 1:30
+            $limitSeconds = $btoSeconds + ($tournament->bto_limit_centiseconds ?? 150);
             $limitTimer = $this->secondsToTimer($limitSeconds);
 
             $btoData = [

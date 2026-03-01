@@ -205,13 +205,33 @@
                 </div>
 
                 <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="bto_limit_centiseconds">BTO Limit (centiseconds)</label>
+                            <input type="number"
+                                   class="form-control @error('bto_limit_centiseconds') is-invalid @enderror"
+                                   id="bto_limit_centiseconds"
+                                   name="bto_limit_centiseconds"
+                                   value="{{ old('bto_limit_centiseconds', $tournament->bto_limit_centiseconds ?? 150) }}"
+                                   min="1">
+                            <small class="form-text text-muted">Added to BTO to calculate the limit time (default: 150 cs = 1.5s)</small>
+                            @error('bto_limit_centiseconds')
+                                <span class="invalid-feedback" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
+                            @enderror
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
                             <div class="form-check">
-                                <input type="checkbox" 
-                                       class="form-check-input" 
-                                       id="best_race_enabled" 
-                                       name="best_race_enabled" 
+                                <input type="checkbox"
+                                       class="form-check-input"
+                                       id="best_race_enabled"
+                                       name="best_race_enabled"
                                        value="1"
                                        {{ old('best_race_enabled', $tournament->best_race_enabled) ? 'checked' : '' }}>
                                 <label class="form-check-label" for="best_race_enabled">

@@ -478,7 +478,7 @@ class BestTimeController extends Controller
         $btoData = null;
         if ($bto) {
             $btoSeconds = AblyHelper::timerToCentiseconds($bto->timer);
-            $limitSeconds = $btoSeconds + 150; // 1:30
+            $limitSeconds = $btoSeconds + ($tournament->bto_limit_centiseconds ?? 150);
             $limitTimer = AblyHelper::centisecondsToTimer($limitSeconds);
             
             $btoData = [

@@ -60,7 +60,7 @@ class TrackController extends Controller
             $limit = null;
             if ($bto) {
                 $btoCentiseconds = AblyHelper::timerToCentiseconds($bto->timer);
-                $limitCentiseconds = $btoCentiseconds + 150; // Add 1:50
+                $limitCentiseconds = $btoCentiseconds + ($tournament->bto_limit_centiseconds ?? 150);
                 $limit = AblyHelper::centisecondsToTimer($limitCentiseconds);
             }
             

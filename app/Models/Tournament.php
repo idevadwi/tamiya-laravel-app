@@ -20,6 +20,7 @@ class Tournament extends Model
         'track_number',
         'bto_number',
         'bto_session_number',
+        'bto_limit_centiseconds',
         'max_racer_per_team',
         'champion_number',
         'best_race_enabled',
