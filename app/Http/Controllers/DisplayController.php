@@ -7,6 +7,7 @@ use App\Models\Race;
 use App\Models\BestTime;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class DisplayController extends Controller
 {
@@ -21,24 +22,18 @@ class DisplayController extends Controller
     {
         $tournament = Tournament::where('slug', $slug)->firstOrFail();
 
-        // Validate track number
         if ($trackNumber < 1 || $trackNumber > $tournament->track_number) {
             abort(404);
         }
 
-        return view('display.track', compact('tournament', 'trackNumber'));
-    }
+        $version = $tournament->track_display_version ?? 1;
+        $bgImage = $tournament->track_bg_image
+            ? Storage::disk('public')->url($tournament->track_bg_image)
+            : '/images/display/track-bg-v' . $version . '.png';
 
-    public function trackV2($slug, $trackNumber)
-    {
-        $tournament = Tournament::where('slug', $slug)->firstOrFail();
+        $view = 'display.track' . ($version > 1 ? '-v' . $version : '');
 
-        // Validate track number
-        if ($trackNumber < 1 || $trackNumber > $tournament->track_number) {
-            abort(404);
-        }
-
-        return view('display.track-v2', compact('tournament', 'trackNumber'));
+        return view($view, compact('tournament', 'trackNumber', 'bgImage'));
     }
 
     public function races($slug, Request $request)

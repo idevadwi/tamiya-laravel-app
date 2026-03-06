@@ -36,6 +36,7 @@ Route::middleware(['auth', 'role.web:ADMINISTRATOR'])->group(function () {
     // Settings routes must be defined before resource route to avoid conflicts
     Route::get('/tournaments/{tournament}/settings', [TournamentController::class, 'settings'])->name('tournaments.settings');
     Route::put('/tournaments/{tournament}/settings', [TournamentController::class, 'updateSettings'])->name('tournaments.settings.update');
+    Route::put('/tournaments/{tournament}/settings/display', [TournamentController::class, 'updateDisplaySettings'])->name('tournaments.settings.display.update');
 
     Route::resource('tournaments', TournamentController::class);
 
@@ -172,8 +173,6 @@ Route::get('/{slug}/summary', [App\Http\Controllers\TournamentSummaryController:
 Route::prefix('{slug}')->group(function () {
     Route::get('/best-race', [App\Http\Controllers\DisplayController::class, 'bestRace'])->name('display.best-race');
     Route::get('/track-{track}', [App\Http\Controllers\DisplayController::class, 'track'])->name('display.track')
-        ->where('track', '[1-9]');
-    Route::get('/track-v2-{track}', [App\Http\Controllers\DisplayController::class, 'trackV2'])->name('display.track-v2')
         ->where('track', '[1-9]');
     Route::get('/races', [App\Http\Controllers\DisplayController::class, 'races'])->name('display.races');
     Route::get('/stats', [App\Http\Controllers\DisplayController::class, 'stats'])->name('display.stats');

@@ -18,6 +18,7 @@ jobs:
         uses: appleboy/ssh-action@v1.0.0
         env:
           APP_KEY: ${{ secrets.APP_KEY }}
+          APP_URL: ${{ secrets.APP_URL }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           ABLY_KEY: ${{ secrets.ABLY_KEY }}
         with:
@@ -26,7 +27,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT }}
           command_timeout: 10m  # Reduced: using pre-built base image now
-          envs: APP_KEY,DB_PASSWORD,ABLY_KEY
+          envs: APP_KEY,APP_URL,DB_PASSWORD,ABLY_KEY
 
           script: |
             set -e
@@ -50,6 +51,7 @@ jobs:
 
             echo "🔐 Updating environment variables..."
             sed -i "s|APP_KEY=.*|APP_KEY=${APP_KEY}|g" .env.production
+            sed -i "s|APP_URL=.*|APP_URL=${APP_URL}|g" .env.production
             sed -i "s|DB_PASSWORD=.*|DB_PASSWORD=${DB_PASSWORD}|g" .env.production
             sed -i "s|ABLY_KEY=.*|ABLY_KEY=${ABLY_KEY}|g" .env.production
             chmod 600 .env.production
@@ -98,6 +100,9 @@ jobs:
             echo "🔐 Setting permissions..."
             docker exec tamiya-laravel-app chown -R laravel:laravel /var/www/html/storage /var/www/html/bootstrap/cache
             docker exec tamiya-laravel-app chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+
+            echo "🔗 Creating storage symlink..."
+            docker exec tamiya-laravel-app php artisan storage:link --relative || true
 
             echo "🧹 Cleaning up..."
             docker image prune -f --filter "dangling=true"

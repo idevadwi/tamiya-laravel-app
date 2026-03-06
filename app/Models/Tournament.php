@@ -28,6 +28,8 @@ class Tournament extends Model
         'best_race_number',
         'persiapan_delay',
         'panggilan_delay',
+        'track_bg_image',
+        'track_display_version',
         'status',
         'created_by',
         'updated_by'

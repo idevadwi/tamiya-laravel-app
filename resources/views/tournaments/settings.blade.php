@@ -20,7 +20,7 @@
         <div class="card-header">
             <h3 class="card-title">Tournament Information</h3>
         </div>
-        <form action="{{ route('tournaments.settings.update', $tournament->id) }}" method="POST">
+        <form action="{{ route('tournaments.settings.update', $tournament->id) }}" method="POST" enctype="multipart/form-data">
             @csrf
             @method('PUT')
             <div class="card-body">
@@ -336,6 +336,75 @@
                 <a href="{{ route('tournaments.index') }}" class="btn btn-default">
                     <i class="fas fa-arrow-left"></i> Back to Tournaments
                 </a>
+            </div>
+        </form>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Display Settings</h3>
+        </div>
+        <form action="{{ route('tournaments.settings.display.update', $tournament->id) }}" method="POST" enctype="multipart/form-data">
+            @csrf
+            @method('PUT')
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="track_display_version">Track Display Version</label>
+                            <select class="form-control @error('track_display_version') is-invalid @enderror"
+                                    id="track_display_version" name="track_display_version">
+                                <option value="1" {{ old('track_display_version', $tournament->track_display_version ?? 1) == 1 ? 'selected' : '' }}>Version 1</option>
+                                <option value="2" {{ old('track_display_version', $tournament->track_display_version ?? 1) == 2 ? 'selected' : '' }}>Version 2</option>
+                            </select>
+                            <small class="form-text text-muted">Layout used for all track display screens in this tournament.</small>
+                            @error('track_display_version')
+                                <span class="invalid-feedback" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
+                            @enderror
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>Track Background Image</label>
+                            @if($tournament->track_bg_image)
+                                <div class="mb-2">
+                                    <img src="{{ asset('storage/' . $tournament->track_bg_image) }}"
+                                         alt="Current background"
+                                         style="max-height: 120px; max-width: 100%; border-radius: 4px; border: 1px solid #dee2e6;">
+                                    <div class="mt-1">
+                                        <div class="form-check">
+                                            <input type="checkbox" class="form-check-input" id="remove_track_bg_image"
+                                                   name="remove_track_bg_image" value="1">
+                                            <label class="form-check-label text-danger" for="remove_track_bg_image">
+                                                Remove current background image
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
+                            <input type="file" class="form-control-file @error('track_bg_image') is-invalid @enderror"
+                                   id="track_bg_image" name="track_bg_image" accept="image/*">
+                            @error('track_bg_image')
+                                <span class="invalid-feedback" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
+                            @enderror
+                            <small class="form-text text-muted">
+                                Accepted: JPEG, PNG, GIF, WebP — max 5 MB.<br>
+                                Leave empty to use the version-default background (track-bg-v1.png / track-bg-v2.png, etc.).
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Save Display Settings
+                </button>
             </div>
         </form>
     </div>

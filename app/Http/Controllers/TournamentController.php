@@ -7,6 +7,7 @@ use App\Models\Race;
 use App\Helpers\AblyHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class TournamentController extends Controller
@@ -236,19 +237,44 @@ class TournamentController extends Controller
             'status' => 'nullable|in:PLANNED,ACTIVE,COMPLETED,CANCELLED',
         ]);
 
-        $updateData = array_merge(
-            $validated,
-            [
-                'best_race_enabled' => isset($request->best_race_enabled) && $request->best_race_enabled == '1',
-                'best_race_live_update' => isset($request->best_race_live_update) && $request->best_race_live_update == '1',
-                'updated_by' => auth()->id()
-            ]
-        );
+        $tournament->update(array_merge($validated, [
+            'best_race_enabled' => isset($request->best_race_enabled) && $request->best_race_enabled == '1',
+            'best_race_live_update' => isset($request->best_race_live_update) && $request->best_race_live_update == '1',
+            'updated_by' => auth()->id(),
+        ]));
+
+        return redirect()->route('tournaments.settings', $tournament->id)
+            ->with('success', 'Tournament settings updated successfully.');
+    }
+
+    public function updateDisplaySettings(Request $request, Tournament $tournament)
+    {
+        $request->validate([
+            'track_display_version' => 'nullable|integer|min:1',
+            'track_bg_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+            'remove_track_bg_image' => 'nullable|boolean',
+        ]);
+
+        $updateData = [
+            'track_display_version' => $request->input('track_display_version', 1),
+            'updated_by' => auth()->id(),
+        ];
+
+        if ($request->boolean('remove_track_bg_image') && $tournament->track_bg_image) {
+            Storage::disk('public')->delete($tournament->track_bg_image);
+            $updateData['track_bg_image'] = null;
+        } elseif ($request->hasFile('track_bg_image')) {
+            if ($tournament->track_bg_image) {
+                Storage::disk('public')->delete($tournament->track_bg_image);
+            }
+            $updateData['track_bg_image'] = $request->file('track_bg_image')
+                ->store('tournament-backgrounds', 'public');
+        }
 
         $tournament->update($updateData);
 
         return redirect()->route('tournaments.settings', $tournament->id)
-            ->with('success', 'Tournament settings updated successfully.');
+            ->with('success', 'Display settings updated successfully.');
     }
 
     /**

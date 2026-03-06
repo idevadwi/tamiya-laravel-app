@@ -1,6 +1,6 @@
 @extends('display.layouts.tv-display')
 
-@section('title', 'Track ' . $trackNumber . ' - ' . $tournament->name)
+@section('title', 'Track ' . $trackNumber)
 
 @section('styles')
 <link href="https://fonts.googleapis.com/css2?family=Tomorrow:wght@700&display=swap" rel="stylesheet">
@@ -90,7 +90,7 @@
 
 @section('content')
 <div id="stage" class="stage">
-    <img src="/images/display/track-bg-v2.png" alt="Background" class="background-image" />
+    <img src="{{ $bgImage }}" alt="Background" class="background-image" />
     <div id="loading" class="loading">Loading...</div>
 
     <div id="track-number" class="overlay">TRACK {{ $trackNumber }}</div>
