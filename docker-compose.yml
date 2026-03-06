@@ -11,6 +11,7 @@ services:
     volumes:
       # Persistent storage
       - ./storage:/var/www/html/storage
+      - ./storage/app/public:/var/www/html/public/storage
       - ./bootstrap/cache:/var/www/html/bootstrap/cache
 
     environment:

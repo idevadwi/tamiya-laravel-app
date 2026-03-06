@@ -49,9 +49,8 @@ jobs:
             # Clean untracked files but preserve mounted directories
             git clean -fd -e storage -e bootstrap/cache
 
-            echo "🔗 Creating storage symlink on host filesystem..."
+            echo "📁 Ensuring storage/app/public exists for volume mount..."
             mkdir -p storage/app/public
-            ln -sfn $(pwd)/storage/app/public $(pwd)/public/storage
 
             echo "🔐 Updating environment variables..."
             sed -i "s|APP_KEY=.*|APP_KEY=${APP_KEY}|g" .env.production
@@ -104,9 +103,6 @@ jobs:
             echo "🔐 Setting permissions..."
             docker exec tamiya-laravel-app chown -R laravel:laravel /var/www/html/storage /var/www/html/bootstrap/cache
             docker exec tamiya-laravel-app chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
-
-            echo "🔗 Creating storage symlink..."
-            docker exec tamiya-laravel-app php artisan storage:link --relative || true
 
             echo "🧹 Cleaning up..."
             docker image prune -f --filter "dangling=true"
