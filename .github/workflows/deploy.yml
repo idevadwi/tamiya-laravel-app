@@ -49,6 +49,10 @@ jobs:
             # Clean untracked files but preserve mounted directories
             git clean -fd -e storage -e bootstrap/cache
 
+            echo "🔗 Creating storage symlink on host filesystem..."
+            mkdir -p storage/app/public
+            ln -sfn $(pwd)/storage/app/public $(pwd)/public/storage
+
             echo "🔐 Updating environment variables..."
             sed -i "s|APP_KEY=.*|APP_KEY=${APP_KEY}|g" .env.production
             sed -i "s|APP_URL=.*|APP_URL=${APP_URL}|g" .env.production
