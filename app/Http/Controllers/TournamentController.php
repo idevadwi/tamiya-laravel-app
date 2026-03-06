@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Tournament;
 use App\Models\Race;
+use App\Models\BestTime;
 use App\Helpers\AblyHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -321,6 +322,42 @@ class TournamentController extends Controller
 
         // Refresh the active tournament in session to reflect the new session
         setActiveTournament($tournament);
+
+        // Publish placeholder session + current BTO to all tracks so display resets immediately
+        $newSession = $tournament->current_bto_session;
+        $placeholderSession = [
+            'SESI'  => $newSession,
+            'TIMER' => '99:99',
+            'TEAM'  => '--',
+        ];
+        for ($track = 1; $track <= $tournament->track_number; $track++) {
+            try {
+                $bto = BestTime::where('tournament_id', $tournament->id)
+                    ->where('scope', 'OVERALL')
+                    ->where('track', $track)
+                    ->orderBy('timer', 'asc')
+                    ->with('team')
+                    ->first();
+
+                $btoData = null;
+                if ($bto) {
+                    $btoSeconds = AblyHelper::timerToCentiseconds($bto->timer);
+                    $limitSeconds = $btoSeconds + ($tournament->bto_limit_centiseconds ?? 150);
+                    $btoData = [
+                        'TIMER' => $bto->timer,
+                        'TEAM'  => $bto->team->team_name,
+                        'LIMIT' => AblyHelper::centisecondsToTimer($limitSeconds),
+                    ];
+                }
+
+                AblyHelper::publishTrack($tournament, $track, $btoData, $placeholderSession);
+            } catch (\Exception $e) {
+                \Log::warning('Ably publish failed on nextSession', [
+                    'track' => $track,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
 
         return response()->json([
             'success' => "Successfully moved to session {$tournament->current_bto_session}."

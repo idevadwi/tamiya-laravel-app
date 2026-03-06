@@ -14,8 +14,8 @@
     
     {{-- TV optimization --}}
     <meta name="format-detection" content="telephone=no">
-    <link rel="icon" type="image/png" href="{{ asset('images/logo/logo.png') }}"
-    
+    <link rel="icon" type="image/png" href="{{ asset('images/logo/logo.png') }}">
+
     {{-- Ably Library (Local) --}}
     <script src="{{ asset('js/ably.min.js') }}"></script>
     
