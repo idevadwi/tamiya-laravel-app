@@ -44,7 +44,9 @@ class RacerController extends Controller
             $q->where('tournament_id', $tournament->id);
         })->with([
                     'team',
-                    'cards',
+                    'cardAssignments' => function ($q) use ($tournament) {
+                        $q->where('tournament_id', $tournament->id)->with('card');
+                    },
                     'tournamentRacerParticipants' => function ($q) use ($tournament) {
                         $q->where('tournament_id', $tournament->id);
                     }

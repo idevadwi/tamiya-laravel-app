@@ -686,19 +686,24 @@ class RaceController extends Controller
         }
 
         $validated = $request->validate([
-            'card_code' => 'required|string',
+            'input_type' => 'required|in:card_code,card_no',
+            'card_code'  => 'required_if:input_type,card_code|nullable|string',
+            'card_no'    => 'required_if:input_type,card_no|nullable|string',
         ]);
 
-        // Find card by card_code
-        $card = Card::where('card_code', $validated['card_code'])
-            ->where('status', 'ACTIVE')
-            ->with('racer.team')
-            ->first();
+        // Find card by card_code or card_no
+        $cardQuery = Card::where('status', 'ACTIVE')->with('racer.team');
+
+        if ($validated['input_type'] === 'card_no') {
+            $card = $cardQuery->where('card_no', $validated['card_no'])->first();
+        } else {
+            $card = $cardQuery->where('card_code', $validated['card_code'])->first();
+        }
 
         if (!$card) {
             return response()->json([
                 'success' => false,
-                'message' => 'Card not found or inactive. Please check the card code.'
+                'message' => 'Card not found or inactive. Please check the card ' . ($validated['input_type'] === 'card_no' ? 'number' : 'code') . '.'
             ], 404);
         }
 

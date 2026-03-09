@@ -34,11 +34,21 @@
                     <form id="addRaceForm">
                         @csrf
                         <div class="form-group">
-                            <label for="card_code">Card Code <span class="text-danger">*</span></label>
+                            <label class="d-block mb-1">Input Type <span class="text-danger">*</span></label>
+                            <div class="btn-group btn-group-toggle mb-3" data-toggle="buttons">
+                                <label class="btn btn-outline-primary active">
+                                    <input type="radio" name="input_type" id="type_card_code" value="card_code" checked> Card Code
+                                </label>
+                                <label class="btn btn-outline-primary">
+                                    <input type="radio" name="input_type" id="type_card_no" value="card_no"> Card No
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="card_input" id="card_input_label">Card Code <span class="text-danger">*</span></label>
                             <input type="text"
                                    class="form-control form-control-lg"
-                                   id="card_code"
-                                   name="card_code"
+                                   id="card_input"
                                    placeholder="Scan or enter card code..."
                                    autofocus
                                    required>
@@ -161,36 +171,53 @@
 <script>
 $(document).ready(function() {
     const form = $('#addRaceForm');
-    const cardCodeInput = $('#card_code');
+    const cardInput = $('#card_input');
+    const cardInputLabel = $('#card_input_label');
     const messageContainer = $('#messageContainer');
     const recentSubmissions = $('#recentSubmissions');
     let totalRacesInStage = {{ $totalRacesInStage }};
 
-    // Auto-focus on card code input
-    cardCodeInput.focus();
+    // Auto-focus on card input
+    cardInput.focus();
+
+    // Update label/placeholder when radio changes
+    $('input[name="input_type"]').on('change', function() {
+        if ($(this).val() === 'card_no') {
+            cardInputLabel.html('Card No <span class="text-danger">*</span>');
+            cardInput.attr('placeholder', 'Enter card number...');
+        } else {
+            cardInputLabel.html('Card Code <span class="text-danger">*</span>');
+            cardInput.attr('placeholder', 'Scan or enter card code...');
+        }
+        cardInput.val('').focus();
+    });
 
     // Handle form submission
     form.on('submit', function(e) {
         e.preventDefault();
 
-        const cardCode = cardCodeInput.val().trim();
+        const inputType = $('input[name="input_type"]:checked').val();
+        const inputValue = cardInput.val().trim();
 
-        if (!cardCode) {
-            showMessage('Please enter a card code.', 'error');
+        if (!inputValue) {
+            showMessage('Please enter a ' + (inputType === 'card_no' ? 'card number' : 'card code') + '.', 'error');
             return;
         }
 
         // Disable input during submission
-        cardCodeInput.prop('disabled', true);
+        cardInput.prop('disabled', true);
+
+        const postData = {
+            _token: '{{ csrf_token() }}',
+            input_type: inputType,
+        };
+        postData[inputType] = inputValue;
 
         // Submit via AJAX
         $.ajax({
             url: '{{ route("tournament.races.addByCard") }}',
             method: 'POST',
-            data: {
-                _token: '{{ csrf_token() }}',
-                card_code: cardCode
-            },
+            data: postData,
             success: function(response) {
                 if (response.success) {
                     // Show success message
@@ -200,7 +227,7 @@ $(document).ready(function() {
                     addSubmission(response.data);
 
                     // Clear input
-                    cardCodeInput.val('');
+                    cardInput.val('');
 
                     // Play success sound (optional)
                     playSuccessSound();
@@ -209,7 +236,7 @@ $(document).ready(function() {
                 }
 
                 // Re-enable and focus input
-                cardCodeInput.prop('disabled', false).focus();
+                cardInput.prop('disabled', false).focus();
             },
             error: function(xhr) {
                 let errorMessage = 'Failed to create race. Please try again.';
@@ -217,36 +244,30 @@ $(document).ready(function() {
                 if (xhr.responseJSON && xhr.responseJSON.message) {
                     errorMessage = xhr.responseJSON.message;
 
-                    // If card not found, append the card number to the error message
                     if (errorMessage.toLowerCase().includes('card') &&
                         (errorMessage.toLowerCase().includes('not found') ||
                          errorMessage.toLowerCase().includes('tidak ditemukan'))) {
-                        errorMessage = `${errorMessage} (Card: ${cardCode})`;
+                        errorMessage = `${errorMessage} (${inputType === 'card_no' ? 'Card No' : 'Card'}: ${inputValue})`;
                     }
                 } else if (xhr.responseJSON && xhr.responseJSON.errors) {
                     const errors = xhr.responseJSON.errors;
                     const firstError = Object.values(errors)[0];
-                    if (Array.isArray(firstError)) {
-                        errorMessage = firstError[0];
-                    } else {
-                        errorMessage = firstError;
-                    }
+                    errorMessage = Array.isArray(firstError) ? firstError[0] : firstError;
 
-                    // If card not found error, append the card number
                     if (errorMessage.toLowerCase().includes('card') &&
                         (errorMessage.toLowerCase().includes('not found') ||
                          errorMessage.toLowerCase().includes('tidak ditemukan'))) {
-                        errorMessage = `${errorMessage} (Card: ${cardCode})`;
+                        errorMessage = `${errorMessage} (${inputType === 'card_no' ? 'Card No' : 'Card'}: ${inputValue})`;
                     }
                 }
 
                 showMessage(errorMessage, 'error');
 
                 // Clear input on error
-                cardCodeInput.val('');
+                cardInput.val('');
 
                 // Re-enable and focus input
-                cardCodeInput.prop('disabled', false).focus();
+                cardInput.prop('disabled', false).focus();
             }
         });
     });
@@ -338,7 +359,7 @@ $(document).ready(function() {
     // Re-focus on input when clicking anywhere on the page
     $(document).on('click', function(e) {
         if (!$(e.target).is('input, button, a')) {
-            cardCodeInput.focus();
+            cardInput.focus();
         }
     });
 });

@@ -118,8 +118,8 @@
                                 @endif
                             </td>
                             <td>
-                                @forelse($racer->cards as $card)
-                                    <span class="badge badge-warning">{{ $card->card_no }}</span>
+                                @forelse($racer->cardAssignments as $assignment)
+                                    <span class="badge badge-warning">{{ $assignment->card->card_no }}</span>
                                 @empty
                                     <span class="text-muted">-</span>
                                 @endforelse
