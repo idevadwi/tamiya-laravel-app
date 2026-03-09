@@ -111,7 +111,7 @@
                                 </div>
 
                                 <div class="form-group">
-                                    <label>Select Active Racers <span class="text-danger">*</span></label>
+                                    <label>Select Active Racers</label>
                                     <div id="racerCheckboxes" class="border rounded p-3">
                                         <!-- Racer checkboxes will be dynamically inserted here -->
                                     </div>
@@ -254,7 +254,7 @@ $(document).ready(function() {
         const $selectedCount = $('#selectedCount');
         
         if (checkedCount === 0) {
-            $selectedCount.html('<span class="text-danger">(0 selected - please select at least 1 racer)</span>');
+            $selectedCount.html('<span class="text-muted">(0 selected - no racers will be added)</span>');
         } else if (checkedCount > maxRacers) {
             $selectedCount.html(`<span class="text-danger">(${checkedCount}/${totalCount} selected - exceeds maximum of ${maxRacers})</span>`);
         } else {
@@ -272,12 +272,6 @@ $(document).ready(function() {
             
             if (racers.length > 0) {
                 const checkedCount = $('.racer-checkbox:checked').length;
-                
-                if (checkedCount === 0) {
-                    e.preventDefault();
-                    alert('Please select at least one racer to participate in this tournament.');
-                    return false;
-                }
                 
                 if (checkedCount > maxRacers) {
                     e.preventDefault();

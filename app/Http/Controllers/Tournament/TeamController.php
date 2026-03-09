@@ -120,8 +120,8 @@ class TeamController extends Controller
 
             $team = Team::findOrFail($validated['existing_team_id']);
 
-            // Get selected racers or all racers if none selected
-            $selectedRacerIds = $validated['selected_racers'] ?? $team->racers->pluck('id')->toArray();
+            // Get selected racers (empty array allowed — no racers selected)
+            $selectedRacerIds = $validated['selected_racers'] ?? [];
 
             // Validate max racer limit
             if (count($selectedRacerIds) > $tournament->max_racer_per_team) {
