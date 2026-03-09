@@ -211,7 +211,7 @@ class TeamController extends Controller
         }
 
         // Load racers for this team with their cards
-        $racers = $team->racers()->with('cards')->withCount('cards')->latest()->get();
+        $racers = $team->racers()->withCount('cards')->latest()->get();
 
         // Load active racer status for this tournament
         $activeRacerIds = TournamentRacerParticipant::where('tournament_id', $tournament->id)
@@ -219,6 +219,13 @@ class TeamController extends Controller
             ->where('is_active', true)
             ->pluck('racer_id')
             ->toArray();
+
+        // Load tournament-scoped card assignments (keyed by racer_id)
+        $racerCards = \App\Models\TournamentCardAssignment::where('tournament_id', $tournament->id)
+            ->whereIn('racer_id', $racers->pluck('id'))
+            ->with('card')
+            ->get()
+            ->keyBy('racer_id');
 
         // Get cards with card_no that are not yet assigned in this tournament
         $assignedCardIds = \App\Models\TournamentCardAssignment::where('tournament_id', $tournament->id)
@@ -230,7 +237,7 @@ class TeamController extends Controller
             ->orderBy('card_no')
             ->get();
 
-        return view('tournament.teams.show', compact('team', 'tournament', 'racers', 'activeRacerIds', 'availableCards'));
+        return view('tournament.teams.show', compact('team', 'tournament', 'racers', 'activeRacerIds', 'availableCards', 'racerCards'));
     }
 
     /**

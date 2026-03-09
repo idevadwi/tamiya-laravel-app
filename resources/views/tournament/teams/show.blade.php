@@ -100,15 +100,15 @@
                                             @endif
                                         </td> --}}
                                         <td>
-                                            <span class="badge badge-info">{{ $racer->cards_count }}</span>
+                                            <span class="badge badge-info">{{ isset($racerCards[$racer->id]) ? 1 : 0 }}</span>
                                         </td>
                                         {{-- <td>{{ $racer->created_at->format('Y-m-d H:i') }}</td> --}}
                                         <td>
                                             <div class="btn-group" role="group">
                                                 <button type="button" class="btn btn-sm btn-warning edit-racer-btn"
                                                     data-racer-id="{{ $racer->id }}" data-racer-name="{{ $racer->racer_name }}"
-                                                    data-card-no="{{ $racer->cards->first()->card_no ?? '' }}"
-                                                    data-card-id="{{ $racer->cards->first()->id ?? '' }}" title="Edit Racer">
+                                                    data-card-no="{{ $racerCards[$racer->id]->card->card_no ?? '' }}"
+                                                    data-card-id="{{ $racerCards[$racer->id]->card->id ?? '' }}" title="Edit Racer">
                                                     <i class="fas fa-edit"></i>
                                                 </button>
                                                 <button type="button" class="btn btn-sm btn-danger delete-racer-btn"
