@@ -115,6 +115,7 @@ Route::middleware(['auth', 'role.web:ADMINISTRATOR'])->prefix('admin')->name('ad
 
 // Tournament Routes (Moderator + Admin Scope)
 Route::middleware(['auth', 'role.web:ADMINISTRATOR,MODERATOR', 'tournament.context'])->prefix('tournament')->name('tournament.')->group(function () {
+    Route::get('/teams/racers-list', [App\Http\Controllers\Tournament\TeamController::class, 'racersList'])->name('teams.racers-list');
     Route::resource('teams', App\Http\Controllers\Tournament\TeamController::class);
 
     // Racer custom routes

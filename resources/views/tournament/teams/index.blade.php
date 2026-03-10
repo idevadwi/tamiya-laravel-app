@@ -8,9 +8,14 @@
         <h1>Teams</h1>
         <p class="text-muted mb-0">Tournament: <strong>{{ $tournament->tournament_name }}</strong></p>
     </div>
-    <a href="{{ route('tournament.teams.create') }}" class="btn btn-primary">
-        <i class="fas fa-plus"></i> Add Team
-    </a>
+    <div class="d-flex gap-2">
+        <a href="{{ route('tournament.teams.racers-list') }}" class="btn btn-success mr-2">
+            <i class="fas fa-list"></i> Racer List
+        </a>
+        <a href="{{ route('tournament.teams.create') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Add Team
+        </a>
+    </div>
 </div>
 @stop
 

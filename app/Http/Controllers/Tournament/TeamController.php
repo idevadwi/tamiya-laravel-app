@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Tournament;
 
 use App\Http\Controllers\Controller;
 use App\Models\Card;
+use App\Models\Racer;
 use App\Models\Team;
+use App\Models\TournamentCardAssignment;
 use App\Models\TournamentParticipant;
 use App\Models\TournamentRacerParticipant;
 use Illuminate\Http\Request;
@@ -58,6 +60,47 @@ class TeamController extends Controller
         }
 
         return view('tournament.teams.index', compact('teams', 'tournament', 'activeRacerCounts', 'sort', 'direction'));
+    }
+
+    /**
+     * Display a list of all active racers in the tournament with their team and card info.
+     */
+    public function racersList()
+    {
+        $tournament = getActiveTournament();
+
+        if (!$tournament) {
+            return redirect()->route('home')
+                ->with('error', 'Please select a tournament first.');
+        }
+
+        $allowedSorts = ['racer_name', 'team_name', 'card_no', 'card_code'];
+        $sort = in_array(request('sort'), $allowedSorts) ? request('sort') : 'team_name';
+        $direction = request('direction') === 'asc' ? 'asc' : 'desc';
+
+        // Build query with joins so we can sort at DB level
+        $racerParticipants = TournamentRacerParticipant::where('tournament_racer_participants.tournament_id', $tournament->id)
+            ->where('tournament_racer_participants.is_active', true)
+            ->join('racers', 'racers.id', '=', 'tournament_racer_participants.racer_id')
+            ->join('teams', 'teams.id', '=', 'tournament_racer_participants.team_id')
+            ->leftJoin('tournament_card_assignments', function ($join) use ($tournament) {
+                $join->on('tournament_card_assignments.racer_id', '=', 'tournament_racer_participants.racer_id')
+                    ->where('tournament_card_assignments.tournament_id', $tournament->id);
+            })
+            ->leftJoin('cards', 'cards.id', '=', 'tournament_card_assignments.card_id')
+            ->select(
+                'tournament_racer_participants.*',
+                'racers.racer_name',
+                'teams.team_name',
+                'cards.card_no',
+                'cards.card_code'
+            )
+            ->orderBy($sort === 'racer_name' ? 'racers.racer_name' :
+                      ($sort === 'card_no' ? 'cards.card_no' :
+                      ($sort === 'card_code' ? 'cards.card_code' : 'teams.team_name')), $direction)
+            ->get();
+
+        return view('tournament.teams.racers-list', compact('racerParticipants', 'tournament', 'sort', 'direction'));
     }
 
     /**
