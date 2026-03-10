@@ -16,8 +16,13 @@ class TournamentCardAssignment extends Model
         'card_id',
         'racer_id',
         'status',
+        'returned_at',
         'created_by',
         'updated_by',
+    ];
+
+    protected $casts = [
+        'returned_at' => 'datetime',
     ];
 
     public function tournament()

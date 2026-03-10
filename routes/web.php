@@ -156,6 +156,11 @@ Route::middleware(['auth', 'role.web:ADMINISTRATOR,MODERATOR', 'tournament.conte
     Route::get('/add-race', [\App\Http\Controllers\RaceController::class, 'addRacePage'])->name('races.add');
     Route::post('/add-race/submit', [\App\Http\Controllers\RaceController::class, 'addRaceByCard'])->name('races.addByCard');
 
+    // Card Returns
+    Route::get('/card-returns', [App\Http\Controllers\Tournament\CardReturnController::class, 'index'])->name('card-returns.index');
+    Route::post('/card-returns/submit', [App\Http\Controllers\Tournament\CardReturnController::class, 'store'])->name('card-returns.store');
+    Route::post('/card-returns/undo', [App\Http\Controllers\Tournament\CardReturnController::class, 'undo'])->name('card-returns.undo');
+
     // Proceed to next stage
     Route::post('/tournaments/next-stage', [TournamentController::class, 'nextStage'])->name('tournaments.nextStage');
 

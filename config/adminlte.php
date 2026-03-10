@@ -441,6 +441,13 @@ return [
             'active' => ['add-race*', 'tournament/add-race*'],
             'classes' => 'add-race-menu-item',
         ],
+        [
+            'text' => 'Card Returns',
+            'route' => 'tournament.card-returns.index',
+            'icon' => 'fas fa-fw fa-undo-alt',
+            'can' => 'accessTournament',
+            'active' => ['tournament/card-returns*'],
+        ],
     ],
 
     /*
