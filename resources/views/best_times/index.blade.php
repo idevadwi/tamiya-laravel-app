@@ -203,7 +203,7 @@
     </div>
     @if($bestTimes->hasPages())
         <div class="card-footer">
-            {{ $bestTimes->links() }}
+            {{ $bestTimes->links('pagination::bootstrap-4') }}
         </div>
     @endif
 </div>
