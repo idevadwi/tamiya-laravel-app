@@ -447,6 +447,38 @@ class RaceController extends Controller
         return response()->json(['success' => 'Last race deleted: ' . $info]);
     }
 
+    public function deleteByRaceNoLane(Request $request)
+    {
+        $tournament = getActiveTournament();
+
+        if (!$tournament) {
+            return response()->json(['error' => 'No active tournament'], 400);
+        }
+
+        $validated = $request->validate([
+            'stage'   => 'required|integer|min:1',
+            'race_no' => 'required|integer|min:1',
+            'lane'    => 'required|string|max:5',
+        ]);
+
+        $race = Race::where('tournament_id', $tournament->id)
+            ->where('stage', $validated['stage'])
+            ->where('race_no', $validated['race_no'])
+            ->where('lane', strtoupper($validated['lane']))
+            ->first();
+
+        if (!$race) {
+            return response()->json([
+                'error' => "Race not found: Stage {$validated['stage']}, Race No {$validated['race_no']}, Lane " . strtoupper($validated['lane']),
+            ], 404);
+        }
+
+        $info = "Stage {$race->stage}, Race No {$race->race_no}, Lane {$race->lane}";
+        $race->delete();
+
+        return response()->json(['success' => 'Race deleted: ' . $info]);
+    }
+
     /**
      * Balance races by ensuring the last race has at least 2 lanes per track.
      * Moves teams from the previous race if needed.
@@ -804,6 +836,63 @@ class RaceController extends Controller
      * This will redistribute all racers from multiple tracks into new races
      * using only Track 1 with lanes A, B, C.
      */
+    /**
+     * Display a plain table view of races (admin only).
+     */
+    public function tableView(Request $request)
+    {
+        $tournament = getActiveTournament();
+
+        if (!$tournament) {
+            return redirect()->route('home')
+                ->with('error', 'Please select a tournament first.');
+        }
+
+        $stages = Race::where('tournament_id', $tournament->id)
+            ->distinct()
+            ->orderBy('stage', 'desc')
+            ->pluck('stage');
+
+        $selectedStage = $request->has('stage') && $request->stage !== ''
+            ? (int) $request->stage
+            : ($stages->first() ?? null);
+
+        $races = collect();
+        if ($selectedStage) {
+            $races = Race::where('tournament_id', $tournament->id)
+                ->where('stage', $selectedStage)
+                ->with(['racer', 'team', 'card'])
+                ->orderBy('race_no')
+                ->orderBy('lane')
+                ->get();
+        }
+
+        return view('races.table', compact('tournament', 'stages', 'selectedStage', 'races'));
+    }
+
+    /**
+     * Bulk delete races by ID (admin only).
+     */
+    public function bulkDelete(Request $request)
+    {
+        $tournament = getActiveTournament();
+
+        if (!$tournament) {
+            return redirect()->back()->with('error', 'No active tournament.');
+        }
+
+        $validated = $request->validate([
+            'race_ids'   => 'required|array|min:1',
+            'race_ids.*' => 'required|uuid',
+        ]);
+
+        $deleted = Race::where('tournament_id', $tournament->id)
+            ->whereIn('id', $validated['race_ids'])
+            ->delete();
+
+        return redirect()->back()->with('success', "{$deleted} race(s) deleted successfully.");
+    }
+
     public function convertToSingleTrack(Request $request)
     {
         $tournament = getActiveTournament();

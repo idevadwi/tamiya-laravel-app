@@ -177,6 +177,19 @@ $(document).ready(function() {
     const recentSubmissions = $('#recentSubmissions');
     let totalRacesInStage = {{ $totalRacesInStage }};
 
+    const COOLDOWN_MS = 15000;
+    const recentCards = {}; // key: "inputType:value" → timestamp
+
+    function getCooldownKey(inputType, value) {
+        return inputType + ':' + value.toLowerCase();
+    }
+
+    function getRemainingCooldown(key) {
+        if (!recentCards[key]) return 0;
+        const elapsed = Date.now() - recentCards[key];
+        return elapsed < COOLDOWN_MS ? Math.ceil((COOLDOWN_MS - elapsed) / 1000) : 0;
+    }
+
     // Auto-focus on card input
     cardInput.focus();
 
@@ -204,6 +217,15 @@ $(document).ready(function() {
             return;
         }
 
+        // Check cooldown for same card
+        const cooldownKey = getCooldownKey(inputType, inputValue);
+        const remaining = getRemainingCooldown(cooldownKey);
+        if (remaining > 0) {
+            showMessage(`Card already submitted. Please wait <strong>${remaining}s</strong> before submitting the same card again.`, 'error');
+            cardInput.val('').focus();
+            return;
+        }
+
         // Disable input during submission
         cardInput.prop('disabled', true);
 
@@ -220,6 +242,9 @@ $(document).ready(function() {
             data: postData,
             success: function(response) {
                 if (response.success) {
+                    // Record cooldown for this card
+                    recentCards[cooldownKey] = Date.now();
+
                     // Show success message
                     showMessage(response.message, 'success');
 

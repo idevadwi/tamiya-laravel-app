@@ -191,6 +191,10 @@
                     data-target="#deleteLastRaceModal">
                     <i class="fas fa-trash-alt"></i> {{ __('messages.delete_last_input_race') }}
                 </button>
+                <button type="button" class="btn btn-outline-danger btn-block mb-2" data-toggle="modal"
+                    data-target="#deleteSpecificRaceModal">
+                    <i class="fas fa-search-minus"></i> Delete Specific Race
+                </button>
                 <button type="button" class="btn btn-outline-primary btn-block mb-2" data-toggle="modal"
                     data-target="#shareLinksModal">
                     <i class="fas fa-share-alt"></i> {{ __('messages.share_links') }}
@@ -611,6 +615,59 @@
     </div>
 </div>
 
+<!-- Delete Specific Race Modal -->
+<div class="modal fade" id="deleteSpecificRaceModal" tabindex="-1" role="dialog" aria-labelledby="deleteSpecificRaceLabel"
+    aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteSpecificRaceLabel">
+                    <i class="fas fa-search-minus text-danger"></i> Delete Specific Race
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="{{ __('messages.close') }}">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>{{ __('messages.warning') }}:</strong> This will permanently delete the matching race entry.
+                </div>
+                <form id="deleteSpecificRaceForm">
+                    @csrf
+                    <div class="form-group">
+                        <label for="dsr-stage">{{ __('messages.stage') }} <span class="text-danger">*</span></label>
+                        <select class="form-control" id="dsr-stage" name="stage" required>
+                            @for($i = 1; $i <= $activeTournament->current_stage + 1; $i++)
+                                <option value="{{ $i }}" {{ $i == $activeTournament->current_stage + 1 ? 'selected' : '' }}>
+                                    {{ __('messages.stage') }} {{ $i }}
+                                </option>
+                            @endfor
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="dsr-race-no">Race No <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" id="dsr-race-no" name="race_no"
+                            min="1" placeholder="e.g. 80" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="dsr-lane">Lane <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="dsr-lane" name="lane"
+                            maxlength="5" placeholder="e.g. F" style="text-transform:uppercase;" required>
+                    </div>
+                </form>
+                <div id="deleteSpecificRaceError" class="alert alert-danger" style="display:none;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">{{ __('messages.cancel') }}</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteSpecificRaceBtn">
+                    <i class="fas fa-trash-alt"></i> {{ __('messages.delete') }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Confirm Next Session Modal -->
 <div class="modal fade" id="confirmNextSessionModal" tabindex="-1" role="dialog" aria-labelledby="confirmNextSessionLabel"
     aria-hidden="true">
@@ -916,6 +973,60 @@
                         confirmButtonColor: '#dc3545',
                         confirmButtonText: 'OK'
                     });
+                    btn.prop('disabled', false).html('<i class="fas fa-trash-alt"></i> {{ __("messages.delete") }}');
+                }
+            });
+        });
+
+        // Delete Specific Race
+        $('#deleteSpecificRaceModal').on('show.bs.modal', function () {
+            $('#deleteSpecificRaceError').hide();
+            $('#dsr-race-no').val('');
+            $('#dsr-lane').val('');
+        });
+
+        $('#dsr-lane').on('input', function () {
+            $(this).val($(this).val().toUpperCase());
+        });
+
+        $('#confirmDeleteSpecificRaceBtn').on('click', function () {
+            var btn = $(this);
+            var stage = $('#dsr-stage').val();
+            var raceNo = $('#dsr-race-no').val().trim();
+            var lane = $('#dsr-lane').val().trim();
+
+            if (!stage || !raceNo || !lane) {
+                $('#deleteSpecificRaceError').text('Please fill in all fields.').show();
+                return;
+            }
+
+            btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Deleting...');
+            $('#deleteSpecificRaceError').hide();
+
+            $.ajax({
+                url: '{{ route("tournament.races.deleteByRaceNoLane") }}',
+                method: 'DELETE',
+                data: { _token: '{{ csrf_token() }}', stage: stage, race_no: raceNo, lane: lane },
+                success: function (response) {
+                    $('#deleteSpecificRaceModal').modal('hide');
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Deleted!',
+                        text: response.success,
+                        confirmButtonColor: '#28a745',
+                        confirmButtonText: 'OK'
+                    }).then(function () {
+                        location.reload();
+                    });
+                },
+                error: function (xhr) {
+                    var errorMsg = 'An error occurred';
+                    if (xhr.responseJSON && xhr.responseJSON.error) {
+                        errorMsg = xhr.responseJSON.error;
+                    } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMsg = xhr.responseJSON.message;
+                    }
+                    $('#deleteSpecificRaceError').text(errorMsg).show();
                     btn.prop('disabled', false).html('<i class="fas fa-trash-alt"></i> {{ __("messages.delete") }}');
                 }
             });

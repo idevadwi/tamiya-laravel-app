@@ -406,6 +406,13 @@ return [
             'active' => ['tournament/races*'],
         ],
         [
+            'text' => 'Races Table',
+            'route' => 'tournament.races.tableView',
+            'icon' => 'fas fa-fw fa-table',
+            'can' => 'isAdministrator',
+            'active' => ['tournament/races/table-view*'],
+        ],
+        [
             'text' => 'Announcer',
             'route' => 'tournament.races.announcer',
             'icon' => 'fas fa-fw fa-bullhorn',

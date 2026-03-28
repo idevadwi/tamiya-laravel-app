@@ -134,6 +134,14 @@ Route::middleware(['auth', 'role.web:ADMINISTRATOR,MODERATOR', 'tournament.conte
 
     Route::get('/races/last-input-preview', [\App\Http\Controllers\RaceController::class, 'lastInputPreview'])->name('races.lastInputPreview');
     Route::delete('/races/delete-last-input', [\App\Http\Controllers\RaceController::class, 'deleteLastInput'])->name('races.deleteLastInput');
+    Route::delete('/races/delete-by-race-no-lane', [\App\Http\Controllers\RaceController::class, 'deleteByRaceNoLane'])->name('races.deleteByRaceNoLane');
+
+    // Admin-only race table view & bulk delete
+    Route::middleware(['role.web:ADMINISTRATOR'])->group(function () {
+        Route::get('/races/table-view', [\App\Http\Controllers\RaceController::class, 'tableView'])->name('races.tableView');
+        Route::delete('/races/bulk-delete', [\App\Http\Controllers\RaceController::class, 'bulkDelete'])->name('races.bulkDelete');
+    });
+
     Route::resource('races', \App\Http\Controllers\RaceController::class);
     Route::post('/races/toggle-called', [\App\Http\Controllers\RaceController::class, 'toggleCalled'])->name('races.toggleCalled');
     Route::post('/races/balance', [\App\Http\Controllers\RaceController::class, 'balanceRaces'])->name('races.balance');
